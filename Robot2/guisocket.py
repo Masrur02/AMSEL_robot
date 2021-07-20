@@ -122,6 +122,10 @@ class Socket:
 
         triggerData = {"time": time, "trigger": trigger}
         self.__protocol.send_message('triggerData', triggerData)
+    def speed (self):
+        speed=self.gui.speed_entry.get()
+        speedData = {"speed": speed}
+        self.__protocol.send_message('speedData', speedData)
 
     def Quit(self):
         Quit_button = self.gui.Button(self.gui.top, text="Quit", fg="blue", command=quit).place(x=1200, y=220)
