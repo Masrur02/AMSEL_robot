@@ -97,7 +97,7 @@ class Socket:
         return self.__is_connected
 
 class Protocol:
-    def __init__(self, on_message_handlers, video_port=59083, data_port=59084, ip='127.0.0.1'):
+    def __init__(self, on_message_handlers, video_port=59083, data_port=59084):
         self.__video_socket = Socket(port=video_port)
         self.__data_socket = Socket(port=data_port)
         self.__on_message_handlers = on_message_handlers

@@ -9,7 +9,7 @@ import os
 
 class Socket:
     host='168.115.106.126'
-
+    # host = '127.0.0.1'
     def __init__(self):
         self.on_message = {
             'frame': self.onFrameAsync,

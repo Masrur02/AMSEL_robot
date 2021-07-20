@@ -18,7 +18,6 @@ ads = ADS.ADS1115(i2c)
 
 
 class Server:
-    host ="168.115.106.126"
     def __init__(self):
         self.__send_video = False
         message_handlers = {
@@ -27,7 +26,7 @@ class Server:
             'triggerData': self.onTriggerData,
             'speedData': self.onSpeedData
         }
-        self.__protocol = Protocol(on_message_handlers=message_handlers, ip=self.host)
+        self.__protocol = Protocol(on_message_handlers=message_handlers)
     
     def commandHandler(self, command):
         commands = {
@@ -148,15 +147,6 @@ class Server:
         signalData={"X":X,"Y":Y}
         self.__protocol.send_message('signalData', signalData)
                 
-            
-
-
-
-
-
-
-
-
     def start_video_stream(self):
         if self.__send_video:
             return # ignore if already sending videos
