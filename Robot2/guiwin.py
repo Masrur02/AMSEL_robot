@@ -16,7 +16,6 @@ import cv2, pickle, struct
 import time
 from threading import *
 
-from protocol import Protocol
 
 
 class Gui:

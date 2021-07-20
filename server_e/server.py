@@ -1,6 +1,6 @@
 from enum import Flag
 import socket
-from protocol import Protocol
+from protocol_server import Protocol
 import cv2
 import pickle
 from threading import Thread
@@ -19,25 +19,7 @@ ads = ADS.ADS1115(i2c)
 
 class Server:
     def __init__(self):
-        port = 5050
-        host ="168.115.106.126"
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind((host, port))
-        s.listen(5)
-        
-        
-            
-            
-
-
-       
-        
-        
-        
-        self.__socket = s
-        self.__is_connected = False
         self.__send_video = False
-        self.__connection = None
         message_handlers = {
             'command': self.commandHandler,
             'button': self.onButtonClick,
@@ -67,30 +49,17 @@ class Server:
         }
         buttons.get(button)()
 
-    def __runRecvThread(self):
-        Thread(target=self.__protocol.recv_message).start()
+    def serve_forever(self):
+        print('Waiting for connection.')
+        self.__protocol.wait_untill_ready()
+        self.__protocol.recv_data_forever()
 
-    def waitForConnetion(self):
-        print('Waiting for connection...')
-        conn, add = self.__socket.accept()
-        self.__connection = conn
-        self.__protocol.setSocketConnection(self.__connection)
-        self.__is_connected = True
-        self.__runRecvThread()
-        print(f"Connection from {add} has been established.")
     '''def read(self):
         while True:
             self.a = AnalogIn(ads, ADS.P0)
             self.b=self.a.voltage*1000
             #print(self.b)
             #time.sleep(0.5)'''
-    
-        
-        
-    
-    @property
-    def isConnected(self):
-        return self.__is_connected
     
     def onStartVideo(self):
         thread = Thread(target=self.start_video_stream)
@@ -178,15 +147,6 @@ class Server:
         signalData={"X":X,"Y":Y}
         self.__protocol.send_message('signalData', signalData)
                 
-            
-
-
-
-
-
-
-
-
     def start_video_stream(self):
         if self.__send_video:
             return # ignore if already sending videos
@@ -232,13 +192,8 @@ class Server:
         s.write(str.encode("vc1=0\n"))
         s.write(str.encode("vc2=0\n"))
 
-        
-    
-
-
 if __name__ == "__main__":
-    server = Server()
-    server.waitForConnetion()
     s = Serial('/dev/ttyUSB0', 115200)
-    s.flush
-    #server.read()
+    s.flush()
+    server = Server()
+    server.serve_forever() # This method will block the thread. That's why it must be put at the end.
