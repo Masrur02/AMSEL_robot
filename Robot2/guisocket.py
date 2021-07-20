@@ -112,6 +112,10 @@ class Socket:
 
         triggerData = {"time": time, "trigger": trigger}
         self.__protocol.send_message('triggerData', triggerData)
+    def speed (self):
+        speed=self.gui.speed_entry.get()
+        speedData = {"speed": speed}
+        self.__protocol.send_message('speedData', speedData)
 
     def speed (self):
         speed=self.gui.speed_entry.get()
