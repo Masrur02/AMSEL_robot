@@ -98,16 +98,13 @@ class Socket:
 
 class Protocol:
     def __init__(self, on_message_handlers, video_port=59083, data_port=59084):
+        assert int(video_port) != int(data_port), 'Video and data port can not be the same.'
         self.__video_socket = Socket(port=video_port)
         self.__data_socket = Socket(port=data_port)
         self.__on_message_handlers = on_message_handlers
         self.__is_ready = False
         self.will_recv_data = False
 
-        # data_recv_thread = Thread(target=self.__recv_forever_data)
-        # data_recv_thread.daemon = True
-        # self.__data_recv_thread = data_recv_thread
-        
         Thread(target=self.__video_socket.wait_for_connection).start()
         Thread(target=self.__data_socket.wait_for_connection).start()
         Thread(target=self.__check_ready).start()
