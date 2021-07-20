@@ -1,5 +1,5 @@
 import socket
-from protocol import Protocol
+from protocol_client import Protocol
 from threading import Thread
 from PIL import Image, ImageTk
 import PIL
@@ -10,28 +10,20 @@ import os
 class Socket:
     port = 5050
     #host = socket.gethostbyname(socket.gethostname())
-    host='168.115.106.126'
+    host='127.0.0.1'
 
     def __init__(self):
-        on_message = {
+        self.on_message = {
             'frame': self.onFrameAsync,
             'signalData':self.onsignalData
 
-
         }
         self.gui = None
-        self.__protocol = Protocol(on_message_handlers=on_message)
 
     def connection(self):
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.connect((self.host, self.port))
+        self.__protocol = Protocol(on_message_handlers=self.on_message, ip=self.host)
         self.gui.Connect_button.config(state=DISABLED)
         self.gui.Connect_button["text"] = "Connected"
-        self.__protocol.setSocketConnection(self.s)
-        self.startRecvThread()
-    
-    def startRecvThread(self):
-        Thread(target=self.__protocol.recv_message).start()
     
     def set_gui(self, gui):
         self.gui = gui
