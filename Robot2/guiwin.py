@@ -35,7 +35,7 @@ class Gui:
         self.Sensor = Frame(top, width=120, highlightbackground='blue', highlightthickness=3)
         self.Sensor.grid(row=0, column=1, padx=20, pady=20, ipadx=20, ipady=70)
 
-        self.Excel = Frame(top, width=70, highlightbackground='blue', highlightthickness=3)
+        self.Excel = Frame(top, width=100, highlightbackground='blue', highlightthickness=3)
         self.Excel.grid(row=0, column=2, padx=20, pady=20, ipadx=20, ipady=70)
 
         self.Navigation = Frame(top, width=100, highlightbackground='blue', highlightthickness=3)
@@ -62,9 +62,13 @@ class Gui:
         self.Send_button.place(x=55, y=80)
 
         ######Excel_Box####
-        self.Excel_label = Label(self.Excel, text="Excel").place(x=40, y=5)
-        self.Excel_button = Button(self.Excel, text="Save", fg="blue",command=self.net_connection.save).place(x=40, y=80)
-
+        self.Excel_label = Label(self.Excel, text="Save and Speed").place(x=25, y=5)
+        self.Excel_button = Button(self.Excel, text="Save", fg="blue",command=self.net_connection.save).place(x=40, y=90)
+        self.speed_label = Label(self.Excel, text="Speed").place(x=3, y=28)
+        self.speed_entry = Entry(self.Excel)
+        self.speed_entry.place(x=40, y=30, width=80)
+        self.speed_Send_button = Button(self.Excel, text="Speed_Send", fg="blue", command=self.net_connection.speed)
+        self.speed_Send_button.place(x=30, y=60)
         #####Navigation_Box####
         self.Navigation_label = Label(self.Navigation, text="Navigation").place(x=40, y=5)
         self.Forward_button = Button(self.Navigation, text="F", fg="blue")

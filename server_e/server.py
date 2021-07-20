@@ -4,41 +4,30 @@ from protocol_server import Protocol
 import cv2
 import pickle
 from threading import Thread
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 import time
-# import board
-# import busio
-# i2c = busio.I2C(board.SCL, board.SDA)
-# import adafruit_ads1x15.ads1115 as ADS
-# from adafruit_ads1x15.analog_in import AnalogIn
+import board
+import busio
+i2c = busio.I2C(board.SCL, board.SDA)
+import adafruit_ads1x15.ads1115 as ADS
+from adafruit_ads1x15.analog_in import AnalogIn
 import time
+from serial import Serial
 
-# ads = ADS.ADS1115(i2c)
+ads = ADS.ADS1115(i2c)
 
 
 class Server:
+    host ="168.115.106.126"
     def __init__(self):
-        
-        self.LB = 21 # BOARD pin 12
-        self.LF = 22  # BOARD pin 16
-        self.RF=7   # BOARD pin 19
-        self.RB=31   # BOARD pin 24
-        # GPIO.setwarnings(False) 
-        # GPIO.cleanup()
-        # GPIO.setmode(# GPIO.BOARD)
-        
-        # GPIO.setup(self.LB, # GPIO.OUT, initial=# GPIO.LOW)
-        # GPIO.setup(self.LF, # GPIO.OUT, initial=# GPIO.LOW)
-        # GPIO.setup(self.RF, # GPIO.OUT, initial=# GPIO.LOW)
-        # GPIO.setup(self.RB, # GPIO.OUT, initial=# GPIO.LOW)
-        
         self.__send_video = False
         message_handlers = {
             'command': self.commandHandler,
             'button': self.onButtonClick,
-            'triggerData': self.onTriggerData
+            'triggerData': self.onTriggerData,
+            'speedData': self.onSpeedData
         }
-        self.__protocol = Protocol(on_message_handlers=message_handlers)
+        self.__protocol = Protocol(on_message_handlers=message_handlers, ip=self.host)
     
     def commandHandler(self, command):
         commands = {
@@ -65,7 +54,7 @@ class Server:
         print('Waiting for connection.')
         self.__protocol.wait_untill_ready()
         self.__protocol.recv_data_forever()
-    
+
     '''def read(self):
         while True:
             self.a = AnalogIn(ads, ADS.P0)
@@ -81,6 +70,9 @@ class Server:
         thread.start()
     def onTriggerData(self, triggerData):
         Thread(target=self.onTrigger, args=(triggerData,)).start()
+    def onSpeedData(self, speedData):
+        Thread(target=self.onSpeed, args=(speedData,)).start()
+    
 
     def onAutonomous(self):
         thread = Thread(target=self.autonomous)
@@ -124,37 +116,46 @@ class Server:
     def onTrigger(self,triggerData):
         self.time = triggerData.get("time")
         self.trigger = triggerData.get("trigger")
+    def onSpeed(self,speedData):
+        self.speed = speedData.get("speed")
+        
     def startSignal(self):
         
         
-        # while True:
-        #     t=int(self.time)
-        #     t_end = time.time() + t/1000
-        #     trigger=int(self.trigger)
-        #     Y=[]
-        #     val = AnalogIn(ads, ADS.P0)
+        while True:
+            t=int(self.time)
+            t_end = time.time() + t/1000
+            trigger=int(self.trigger)
+            Y=[]
+            val = AnalogIn(ads, ADS.P0)
             
-        #     val=val.value
-        #     print("val",val)
-        #     if val>=trigger:
-        #         break
-        # for i in range(100):
-        #     #print("Khan")
-        #     val = AnalogIn(ads, ADS.P0)
+            val=val.value
+            print("val",val)
+            if val>=trigger:
+                break
+        for i in range(100):
+            #print("Khan")
+            val = AnalogIn(ads, ADS.P0)
             
-        #     reading=val.value
-        #     print("reading",reading)
-        #     Y.append(reading)
-        # s=(len(Y))
-        # X=list(range(s))
-        # print(s)
-        # print(X)
-        # print(Y)
-        X = [1,2,3]
-        Y = [1,5,8]
+            reading=val.value
+            print("reading",reading)
+            Y.append(reading)
+        s=(len(Y))
+        X=list(range(s))
+        print(s)
+        print(X)
+        print(Y)
         signalData={"X":X,"Y":Y}
         self.__protocol.send_message('signalData', signalData)
                 
+            
+
+
+
+
+
+
+
 
     def start_video_stream(self):
         if self.__send_video:
@@ -175,47 +176,34 @@ class Server:
     def forward(self):
         print("Forward")
         
-        # GPIO.output(self.LF, # GPIO.HIGH)
-        # GPIO.output(self.RF, # GPIO.HIGH)
-        # GPIO.output(self.LB, # GPIO.LOW)
-        # GPIO.output(self.RB, # GPIO.LOW)
+        
+        s.write(str.encode("vc1={speed}\n".format(speed=self.speed)))
+        s.write(str.encode("vc2={speed}\n".format(speed=self.speed)))
     def left(self):
         print("Left")
-        # GPIO.output(self.RF, # GPIO.HIGH)
-        # GPIO.output(self.RB, # GPIO.LOW)
-        # GPIO.output(self.LF, # GPIO.LOW)
-        # GPIO.output(self.LB, # GPIO.HIGH)
+        
+        s.write(str.encode("vc1={speed}\n".format(speed=self.speed)))
+        s.write(str.encode("vc2=-{speed}\n".format(speed=self.speed)))
          
     def right(self):
         print("Right")
-        # GPIO.output(self.RF, # GPIO.LOW)
-        # GPIO.output(self.RB, # GPIO.HIGH)
-        # GPIO.output(self.LF, # GPIO.HIGH)
-        # GPIO.output(self.LB, # GPIO.LOW)
+        
+        s.write(str.encode("vc1=-{speed}\n".format(speed=self.speed)))
+        s.write(str.encode("vc2={speed}\n".format(speed=self.speed)))
     def back(self):
         print("Back")
-        # GPIO.output(self.LB, # GPIO.HIGH)
-        # GPIO.output(self.LF, # GPIO.LOW)
-        # GPIO.output(self.RF, # GPIO.LOW)
-        # GPIO.output(self.RB, # GPIO.HIGH)
+        
+        s.write(str.encode("vc1=-{speed}\n".format(speed=self.speed)))
+        s.write(str.encode("vc2=-{speed}\n".format(speed=self.speed)))
         
     def stop(self):
         print("Stop")
-        # GPIO.output(self.LB, # GPIO.LOW)
-        # GPIO.output(self.LF, # GPIO.LOW)
-        # GPIO.output(self.RF, # GPIO.LOW)
-        # GPIO.output(self.RB, # GPIO.LOW)
-
         
-    
-
+        s.write(str.encode("vc1=0\n"))
+        s.write(str.encode("vc2=0\n"))
 
 if __name__ == "__main__":
+    s = Serial('/dev/ttyUSB0', 115200)
+    s.flush()
     server = Server()
-    server.serve_forever()
-    #server.read()
-    
-        
-    
-  
-
+    server.serve_forever() # This method will block the thread. That's why it must be put at the end.

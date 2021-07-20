@@ -8,9 +8,7 @@ import cv2
 import os
 
 class Socket:
-    port = 5050
-    #host = socket.gethostbyname(socket.gethostname())
-    host='127.0.0.1'
+    host='168.115.106.126'
 
     def __init__(self):
         self.on_message = {
@@ -114,6 +112,11 @@ class Socket:
 
         triggerData = {"time": time, "trigger": trigger}
         self.__protocol.send_message('triggerData', triggerData)
+
+    def speed (self):
+        speed=self.gui.speed_entry.get()
+        speedData = {"speed": speed}
+        self.__protocol.send_message('speedData', speedData)
 
     def Quit(self):
         Quit_button = self.gui.Button(self.gui.top, text="Quit", fg="blue", command=quit).place(x=1200, y=220)
