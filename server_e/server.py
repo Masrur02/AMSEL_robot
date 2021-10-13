@@ -4,17 +4,27 @@ from protocol_server import Protocol
 import cv2
 import pickle
 from threading import Thread
-import RPi.GPIO as GPIO
+import matplotlib.pyplot as plt
 import time
-import board
-import busio
-i2c = busio.I2C(board.SCL, board.SDA)
-import adafruit_ads1x15.ads1115 as ADS
-from adafruit_ads1x15.analog_in import AnalogIn
+import nidaqmx
+from nidaqmx.constants import LineGrouping
+from nidaqmx.constants import Edge, Slope
+from nidaqmx.constants import AcquisitionType
+import pandas as pd
+import time
 import time
 from serial import Serial
+import numpy as np
+import cv2
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow import keras
+from tensorflow.keras.models import load_model
+import tensorflow.keras.backend as K
 
-ads = ADS.ADS1115(i2c)
+
+
+# Load Keras model
 
 
 class Server:
@@ -27,15 +37,16 @@ class Server:
             'speedData': self.onSpeedData
         }
         self.__protocol = Protocol(on_message_handlers=message_handlers)
-    
+
     def commandHandler(self, command):
         commands = {
             'end_video': self.onEndVideo,
             'start_video': self.onStartVideo,
-             "startSignal": self.onSignal,
-             'autonomous': self.onAutonomous
+            "startSignal": self.onSignal,
+            'autonomous': self.onAutonomous
         }
         commands.get(command)()
+
     def onButtonClick(self, button):
         buttons = {
             'F_on': self.F_on,
@@ -60,18 +71,20 @@ class Server:
             self.b=self.a.voltage*1000
             #print(self.b)
             #time.sleep(0.5)'''
-    
+
     def onStartVideo(self):
         thread = Thread(target=self.start_video_stream)
         thread.start()
+
     def onSignal(self):
         thread = Thread(target=self.startSignal)
         thread.start()
+
     def onTriggerData(self, triggerData):
         Thread(target=self.onTrigger, args=(triggerData,)).start()
+
     def onSpeedData(self, speedData):
         Thread(target=self.onSpeed, args=(speedData,)).start()
-    
 
     def onAutonomous(self):
         thread = Thread(target=self.autonomous)
@@ -112,88 +125,181 @@ class Server:
     def onEndVideo(self):
         self.__send_video = False
 
-    def onTrigger(self,triggerData):
+    def onTrigger(self, triggerData):
         self.time = triggerData.get("time")
         self.trigger = triggerData.get("trigger")
-    def onSpeed(self,speedData):
+
+    def onSpeed(self, speedData):
         self.speed = speedData.get("speed")
-        
+
     def startSignal(self):
-        
-        
+
+
+        t_ms = int(self.time)
+
+
+        Triggering = float(self.trigger)
+        t_s = .001 * t_ms
+        print(t_s)
+        fre = 50000
+        Num_samples = int(t_s * fre)
+
+        N = 100000
+        pre = 10
+        pre_trig = int(10 / 100 * Num_samples)
+        def istest():
+            number = 1
+
+
+
+
+
+
+
+            task = nidaqmx.Task()
+
+            task.ai_channels.add_ai_accel_chan("cDAQ1Mod1/ai0")
+            task.ai_channels.add_ai_accel_chan("cDAQ1Mod1/ai2")
+
+            task.timing.cfg_samp_clk_timing(
+                fre, source="", active_edge=Edge.RISING, sample_mode=AcquisitionType.FINITE, samps_per_chan=N)
+
+            value = task.read(N)
+
+            v_ch0 = value[0]
+            v_ch1 = value[1]
+
+            number = sum(i > Triggering for i in v_ch0)
+
+            if number == 0:
+                print("No value found")
+
+                return False
+            else:
+                task.close()
+
+                print("Value found")
+                position = next(x for x, val in enumerate(v_ch0)
+                                if val > Triggering)
+                print("position", position)
+
+                first_index = int(position - pre_trig)
+                last_index = int(first_index + Num_samples)
+
+                print("f", first_index)
+                print("l", last_index)
+
+                y = v_ch0[first_index:last_index]
+                y1 = v_ch1[first_index:last_index]
+
+                # print("y",y)
+                s = (len(y))
+                s1 = len(y1)
+                print(s1)
+                X = list(range(s))
+                signalData = {"X": X, "y": y, "y1":y1}
+                self.__protocol.send_message('signalData', signalData)
+
+
+
+                return True
         while True:
-            t=int(self.time)
-            t_end = time.time() + t/1000
-            trigger=int(self.trigger)
-            Y=[]
-            val = AnalogIn(ads, ADS.P0)
-            
-            val=val.value
-            print("val",val)
-            if val>=trigger:
+            t = istest()
+            if t == True:
                 break
-        for i in range(100):
-            #print("Khan")
-            val = AnalogIn(ads, ADS.P0)
-            
-            reading=val.value
-            print("reading",reading)
-            Y.append(reading)
-        s=(len(Y))
-        X=list(range(s))
-        print(s)
-        print(X)
-        print(Y)
-        signalData={"X":X,"Y":Y}
-        self.__protocol.send_message('signalData', signalData)
-                
+
     def start_video_stream(self):
         if self.__send_video:
-            return # ignore if already sending videos
+            return  # ignore if already sending videos
         self.__send_video = True
-       
-        vid = cv2.VideoCapture("/dev/video0")
+
+        def dsc(y_true, y_pred, smooth=1):
+            y_true_f = K.flatten(y_true)
+            y_pred_f = K.flatten(y_pred)
+            intersection = tf.reduce_sum(y_true_f * y_pred_f)
+            return (2. * intersection + smooth) / (tf.reduce_sum(y_true_f) + tf.reduce_sum(y_pred_f) + smooth)
+
+        def dice_loss(y_true, y_pred):
+            return 1.0 - dsc(y_true, y_pred)
+
+        def IOU(y_true, y_pred):
+
+            y_true = K.flatten(y_true)
+            y_pred = K.flatten(y_pred)
+
+            thresh = 0.5
+
+            y_true = K.cast(K.greater_equal(y_true, thresh), 'float32')
+            y_pred = K.cast(K.greater_equal(y_pred, thresh), 'float32')
+
+            union = K.sum(K.maximum(y_true, y_pred)) + K.epsilon()
+            intersection = K.sum(K.minimum(y_true, y_pred)) + K.epsilon()
+
+            iou = intersection / union
+
+            return iou
+        model = load_model('E:/Work/Khan_robot/server_e/unew_3.h5', custom_objects={'dice_loss': dice_loss, 'IOU': IOU, 'dsc': dsc})
+
+        vid = cv2.VideoCapture(1)
         vid.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         vid.set(cv2.CAP_PROP_FPS, 25)
-        
-        while(vid.isOpened()):
+
+        while (vid.isOpened()):
             _, frame = vid.read()
-            self.__protocol.send_message('frame', frame)
+            small_img = cv2.resize(frame, (512, 512))
+            small_img = np.array(small_img)
+
+            small_img = small_img[None, :, :, :]
+
+            prediction = model.predict(small_img)[0] * 255
+            crack_image = cv2.resize(prediction, (640, 480))
+            b, g, r = cv2.split(crack_image)
+            z = np.zeros_like(g)
+            crack_image = cv2.merge((z, b, z))
+
+            image2 = frame.astype(np.float32)
+
+            result = cv2.addWeighted(image2, 0.5, crack_image, 0.5, 0)
+            # result=result * 255
+            result = result.astype(np.uint8)
+            self.__protocol.send_message('frame', result)
             if not self.__send_video:
                 vid.release()
 
     def forward(self):
         print("Forward")
-        
-        
+
         s.write(str.encode("vc1={speed}\n".format(speed=self.speed)))
         s.write(str.encode("vc2={speed}\n".format(speed=self.speed)))
+
     def left(self):
         print("Left")
-        
+
         s.write(str.encode("vc1={speed}\n".format(speed=self.speed)))
         s.write(str.encode("vc2=-{speed}\n".format(speed=self.speed)))
-         
+
     def right(self):
         print("Right")
-        
+
         s.write(str.encode("vc1=-{speed}\n".format(speed=self.speed)))
         s.write(str.encode("vc2={speed}\n".format(speed=self.speed)))
+
     def back(self):
         print("Back")
-        
+
         s.write(str.encode("vc1=-{speed}\n".format(speed=self.speed)))
         s.write(str.encode("vc2=-{speed}\n".format(speed=self.speed)))
-        
+
     def stop(self):
         print("Stop")
-        
+
         s.write(str.encode("vc1=0\n"))
         s.write(str.encode("vc2=0\n"))
 
+
 if __name__ == "__main__":
-    s = Serial('/dev/ttyUSB0', 115200)
+    s = Serial('COM3', 115200)
     s.flush()
     server = Server()
-    server.serve_forever() # This method will block the thread. That's why it must be put at the end.
+    server.serve_forever()  # This method will block the thread. That's why it must be put at the end.
