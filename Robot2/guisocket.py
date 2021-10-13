@@ -8,7 +8,7 @@ import cv2
 import os
 
 class Socket:
-    host='168.115.106.126'
+    host='192.168.0.4'
     # host = '127.0.0.1'
     def __init__(self):
         self.on_message = {
@@ -34,8 +34,11 @@ class Socket:
     def onSignal(self,signalData):
 
         self.x = signalData.get("X")
-        self.y = signalData.get("Y")
+        self.y = signalData.get("y")
+        self.y1 = signalData.get("y1")
+        
         self.gui.plot.plot(self.x, self.y,color='red')
+        self.gui.plt.plot(self.x, self.y1,color='blue')
         self.gui.canvas.draw()
         self.gui.Start_button.config(state=NORMAL)
 
@@ -46,19 +49,25 @@ class Socket:
         today = datetime.now()
 
         directory = today.strftime('%Y%m%d')
-        path = "E:/Work/Khan_robot/Record/"
+       
+        path = "D:/projects/Khan_robot/Record/"
         folder=os.path.join(path, directory)
         if not os.path.exists(folder):
             os.makedirs(folder)
-        list_dict = {'X': self.x, 'Y': self.y}
-        df = pd.DataFrame(list_dict)
+        list_dict1 = {'X': self.x, 'y': self.y}
+        list_dict2 = {'X': self.x, 'y': self.y1}
+        
+        df1 = pd.DataFrame(list_dict1)
+        df2 = pd.DataFrame(list_dict2)
         time=time.time()
-        file=str(time)
-
-        filename = "%s.csv" % file
+        file1="Channel1__"+ str(time)
+        file2="Channel2__"+ str(time)
+        filename1 = "%s.csv" % file1
+        filename2 = "%s.csv" % file2
         os.chdir(folder)
 
-        df.to_csv(filename, index=False)
+        df1.to_csv(filename1, index=False)
+        df2.to_csv(filename2, index=False)
 
 
 
@@ -70,11 +79,26 @@ class Socket:
         frame = cv2.flip(frame, 1)
         cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
         img = PIL.Image.fromarray(cv2image)
+        img = img.resize((500, 400), Image.ANTIALIAS)
         imgtk = ImageTk.PhotoImage(image=img)
         self.gui.lmain.imgtk = imgtk
 
         self.gui.lmain.configure(image=imgtk)
         self.gui.lmain.grid(row=1, column=2)
+        import pandas as pd
+        from datetime import datetime
+        import time
+        today = datetime.now()
+        directory1 = today.strftime('%Y%m%d')
+        path1 = "D:/projects/Khan_robot/Image/"
+        folder1 = os.path.join(path1, directory1)
+        if not os.path.exists(folder1):
+            os.makedirs(folder1)
+        time = time.time()
+        file = str(time)
+        os.chdir(folder1)
+        cv2.imwrite('./' + str(file) + '.jpg', frame)
+
         self.gui.top.update()
 
     def video(self):
@@ -112,10 +136,6 @@ class Socket:
 
         triggerData = {"time": time, "trigger": trigger}
         self.__protocol.send_message('triggerData', triggerData)
-    def speed (self):
-        speed=self.gui.speed_entry.get()
-        speedData = {"speed": speed}
-        self.__protocol.send_message('speedData', speedData)
 
     def speed (self):
         speed=self.gui.speed_entry.get()
