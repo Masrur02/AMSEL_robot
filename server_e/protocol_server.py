@@ -10,6 +10,7 @@ import time
 
 CHUNK_SIZE = 32 * 1024
 
+
 class Socket:
     def __init__(self, address='0.0.0.0', port=58011, mode='server', queue=False, nodelay=True):
         assert mode in ['server', 'client']
@@ -17,17 +18,17 @@ class Socket:
         self.__is_connected = False
         self.__socket = stock_socket()
         self.__socket_type = mode
-        
+
         if nodelay:
             self.__socket.setsockopt(IPPROTO_TCP, TCP_NODELAY, 1)
         if mode == 'server':
-            self.__socket.bind((address,port))
+            self.__socket.bind((address, port))
             self.__socket.listen(1)
         else:
-            self.__socket.connect((address,port))
+            self.__socket.connect((address, port))
             self.__is_connected = True
             self.__connection = self.__socket
-        
+
         if queue:
             self.__queue_size = 0
             self.__send_queue = Queue()
@@ -96,6 +97,7 @@ class Socket:
     def isConnected(self):
         return self.__is_connected
 
+
 class Protocol:
     def __init__(self, on_message_handlers, video_port=59083, data_port=59084):
         assert int(video_port) != int(data_port), 'Video and data port can not be the same.'
@@ -108,19 +110,19 @@ class Protocol:
         Thread(target=self.__video_socket.wait_for_connection).start()
         Thread(target=self.__data_socket.wait_for_connection).start()
         Thread(target=self.__check_ready).start()
-    
+
     def send_message(self, message_type, message_content):
         if message_type == 'frame':
             self.__video_socket.send_message(message_type, message_content)
         else:
             self.__data_socket.send_message(message_type, message_content)
-    
+
     def send_frame(self, frame):
         self.__video_socket.send_message('frame', frame)
 
     def __recv_execute_data(self):
         msg_type, msg_content = self.__data_socket.recv_a_message()
-        print(msg_type,'AAA')
+        print(msg_type, 'AAA')
         Thread(target=self.__on_message_handlers.get(msg_type), args=(msg_content,)).start()
 
     def __check_ready(self):
@@ -129,11 +131,11 @@ class Protocol:
                 self.__is_ready = True
                 break
             time.sleep(1)
-    
+
     @property
     def is_ready(self):
         return self.__is_ready
-    
+
     def wait_untill_ready(self):
         while not self.__is_ready:
             time.sleep(1)
@@ -144,6 +146,3 @@ class Protocol:
         self.will_recv_data = True
         while self.will_recv_data:
             self.__recv_execute_data()
-
-            
-
