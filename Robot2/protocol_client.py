@@ -98,7 +98,6 @@ class Socket:
 
 class Protocol:
     def __init__(self, on_message_handlers, video_port=59083, data_port=59084, ip='127.0.0.1'):
-        assert int(video_port) != int(data_port), 'Video and data port can not be the same.'
         self.__video_socket = Socket(port=video_port, address=ip, mode='client')
         self.__data_socket = Socket(port=data_port, address=ip, mode='client')
         self.__on_message_handlers = on_message_handlers
