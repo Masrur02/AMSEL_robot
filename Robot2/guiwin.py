@@ -93,15 +93,23 @@ class Gui:
 
 
         self.fig = Figure(figsize=(6, 4))
-        a = self.fig.add_subplot(111)
+        a = self.fig.add_subplot(2,1,1)
+        
         a.plot("", color='red')
         a.clear()
+        b = self.fig.add_subplot(2,1,2)
+        
+        b.plot("", color='blue')
+        b.clear()
         # a.invert_yaxis()
 
         a.set_title("Sensor Data", fontsize=16)
         a.set_ylabel("Value", fontsize=10)
-        a.set_xlabel("Count", fontsize=10)
+        a.set_ylabel("Value", fontsize=10)
+        b.set_ylabel("value", fontsize=10)
+        b.set_xlabel("count", fontsize=10)
         self.plot = a
+        self.plt=b
         canvas = FigureCanvasTkAgg(self.fig, master=top)
         canvas.get_tk_widget().grid(row=1, column=0)
         canvas.draw()
