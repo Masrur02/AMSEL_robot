@@ -4,7 +4,7 @@ from hashlib import md5
 from os import urandom
 from threading import Thread
 from socket import socket as stock_socket
-from socket import TCP_NODELAY, IPPROTO_TCP
+from socket import TCP_NODELAY, IPPROTO_TCP, SHUT_RDWR
 from queue import Queue
 import time
 
@@ -18,6 +18,8 @@ class Socket:
         self.__is_connected = False
         self.__socket = stock_socket()
         self.__socket_type = mode
+        self.__will_send_queue = True
+        self.__disconnected = False
 
         if nodelay:
             self.__socket.setsockopt(IPPROTO_TCP, TCP_NODELAY, 1)
@@ -37,11 +39,19 @@ class Socket:
             thread.start()
 
     def __keep_sending_queue(self):
-        while True:
+        while self.__will_send_queue:
             if self.__queue_size > 0:
                 self.__queue_size -= 1
                 message_type, message_content = self.__send_queue.get_nowait()
                 self.__send_message_impl(message_type, message_content)
+
+    def diconnect(self):
+        self.__disconnected = True
+        self.__will_send_queue = False
+        self.__is_connected = False
+        time.sleep(2) # finish current sending
+        self.__socket.shutdown(SHUT_RDWR)
+        self.__socket.close()
 
     def __send_message_impl(self, message_type, message_content):
         message_content = pickle.dumps(message_content)
@@ -53,13 +63,16 @@ class Socket:
         }
         headers = pickle.dumps(headers)
         to_send = struct.pack('!Q', len(headers)) + headers + message_content
-        print('sending...', message_id)
+        #print('sending...', message_id)
+        #print('sending...', message_id)
         try:
             self.__connection.sendall(to_send)
         except:
             raise RuntimeError
 
     def send_message(self, message_type, message_content):
+        if self.__disconnected:
+            return
         if self.is_queue:
             self.__send_queue.put_nowait((message_type, message_content))
             self.__queue_size += 1
@@ -81,6 +94,8 @@ class Socket:
         return data
 
     def recv_a_message(self):
+        if not self.__is_connected:
+            return None, None
         header_size = struct.unpack("!Q", self.__recv_fully(struct.calcsize('!Q')))[0]
         headers = pickle.loads(self.__recv_fully(header_size))
         message = pickle.loads(self.__recv_fully(headers.get('message_length')))
@@ -99,35 +114,66 @@ class Socket:
 
 
 class Protocol:
-    def __init__(self, on_message_handlers, video_port=59083, data_port=59084):
-        assert int(video_port) != int(data_port), 'Video and data port can not be the same.'
-        self.__video_socket = Socket(port=video_port)
-        self.__data_socket = Socket(port=data_port)
+    def __init__(self, on_message_handlers, front_port=59010,video_port=59083, data_port=59084):
+        assert int(video_port) != int(data_port) != int(front_port), 'Video and data port can not be the same.'
+        self.__video_port = video_port
+        self.__data_port = data_port
+        self.__front_port = front_port
         self.__on_message_handlers = on_message_handlers
+        self.__video_socket = None
+        self.__data_socket = None
+        self.__front_socket = None
+        self.reinit()
+
+
+    def reinit(self):
         self.__is_ready = False
         self.will_recv_data = False
 
+        if self.__video_socket:
+            self.__video_socket.diconnect()
+            print('Disconneted Video Socket.')
+        if self.__data_socket:
+            self.__data_socket.diconnect()
+            print('Disconneted Data Socket.')
+        if self.__front_socket:
+            self.__front_socket.diconnect()
+            print('Disconneted FrontSocket.')
+        
+        self.__video_socket = Socket(port=self.__video_port)
+        self.__data_socket = Socket(port=self.__data_port)
+        self.__front_socket = Socket(port=self.__front_port)
+        
+        print('Waiting for connection...')
+
         Thread(target=self.__video_socket.wait_for_connection).start()
         Thread(target=self.__data_socket.wait_for_connection).start()
+        Thread(target=self.__front_socket.wait_for_connection).start()
         Thread(target=self.__check_ready).start()
 
     def send_message(self, message_type, message_content):
         if message_type == 'frame':
             self.__video_socket.send_message(message_type, message_content)
+        if message_type == 'front_frame':
+            self.__front_socket.send_message(message_type, message_content)
         else:
             self.__data_socket.send_message(message_type, message_content)
 
     def send_frame(self, frame):
         self.__video_socket.send_message('frame', frame)
+    def send_front_frame(self, front_frame):
+        self.__front_socket.send_message('front_frame', front_frame)
 
     def __recv_execute_data(self):
         msg_type, msg_content = self.__data_socket.recv_a_message()
+        if msg_type is None:
+            return
         print(msg_type, '')
         Thread(target=self.__on_message_handlers.get(msg_type), args=(msg_content,)).start()
 
     def __check_ready(self):
         while True:
-            if self.__video_socket.isConnected and self.__data_socket.isConnected:
+            if self.__video_socket.isConnected and self.__data_socket.isConnected and self.__front_socket.isConnected:
                 self.__is_ready = True
                 break
             time.sleep(1)
@@ -143,6 +189,6 @@ class Protocol:
     def recv_data_forever(self):
         if not self.__is_ready:
             raise RuntimeError('Did not received connections yet.')
-        self.will_recv_data = True
-        while self.will_recv_data:
+        # self.will_recv_data = True
+        while True:
             self.__recv_execute_data()
