@@ -6,13 +6,15 @@ import PIL
 from tkinter import DISABLED, NORMAL
 import cv2
 import os
+from tkinter import *
 
 class Socket:
-    host='192.168.0.4'
+    host='192.168.0.53'
     # host = '127.0.0.1'
     def __init__(self):
         self.on_message = {
             'frame': self.onFrameAsync,
+            'front_frame':self.onFrontFrameAsync,
             'signalData':self.onsignalData
 
         }
@@ -22,12 +24,21 @@ class Socket:
         self.__protocol = Protocol(on_message_handlers=self.on_message, ip=self.host)
         self.gui.Connect_button.config(state=DISABLED)
         self.gui.Connect_button["text"] = "Connected"
+        
+    def quit(self):
+        
+        self.gui.Connect_button.config(state=NORMAL)
+        self.gui.Connect_button["text"] = "Connect"
     
     def set_gui(self, gui):
         self.gui = gui
 
     def onFrameAsync(self, frame):
         Thread(target=self.onFrame, args=(frame,)).start()
+    
+    def onFrontFrameAsync(self, front_frame):
+        Thread(target=self.onFrontFrame, args=(front_frame,)).start()
+    
     def onsignalData(self, signalData):
         Thread(target=self.onSignal, args=(signalData,)).start()
 
@@ -50,7 +61,7 @@ class Socket:
 
         directory = today.strftime('%Y%m%d')
        
-        path = "D:/projects/Khan_robot/Record/"
+        path = "Record"
         folder=os.path.join(path, directory)
         if not os.path.exists(folder):
             os.makedirs(folder)
@@ -68,42 +79,91 @@ class Socket:
 
         df1.to_csv(filename1, index=False)
         df2.to_csv(filename2, index=False)
+        
+        os.chdir('..')
+        os.chdir('..')
+
+
+
+    def onFrontFrame(self, front_frame):
+        #global flag
+        #flag = True
+
+
+        frame = cv2.flip(front_frame, 1)
+        cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+        img = PIL.Image.fromarray(cv2image)
+        img = img.resize((600, 430))
+        imgtk1 = ImageTk.PhotoImage(image=img)
+        # label = Label(self.gui.Video2, image=imgtk)
+        # label.place(x=10,y=50)
+        self.gui.lmain2.imgtk = imgtk1
+
+        self.gui.lmain2.configure(image=imgtk1)
+        self.gui.lmain2.place(x=5, y=25)
+        
+        
+
+        self.gui.top.update()
+
+
+
 
 
 
     def onFrame(self, frame):
-        global flag
-        flag = True
+        #global flag
+        #flag = True
 
 
         frame = cv2.flip(frame, 1)
         cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
         img = PIL.Image.fromarray(cv2image)
-        img = img.resize((500, 400), Image.ANTIALIAS)
+        img = img.resize((300, 250))
         imgtk = ImageTk.PhotoImage(image=img)
+        # label = Label(self.gui.Video2, image=imgtk)
+        # label.place(x=10,y=50)
         self.gui.lmain.imgtk = imgtk
 
         self.gui.lmain.configure(image=imgtk)
-        self.gui.lmain.grid(row=1, column=2)
+        self.gui.lmain.place(x=5, y=15)
         import pandas as pd
         from datetime import datetime
         import time
+        path1 = "Image"
+        
         today = datetime.now()
+        
+       
         directory1 = today.strftime('%Y%m%d')
-        path1 = "D:/projects/Khan_robot/Image/"
-        folder1 = os.path.join(path1, directory1)
+       
+        folder1 = os.path.join(path1,directory1)
         if not os.path.exists(folder1):
             os.makedirs(folder1)
         time = time.time()
         file = str(time)
         os.chdir(folder1)
+        #print(os.getcwd())
         cv2.imwrite('./' + str(file) + '.jpg', frame)
+        os.chdir('..')
+        os.chdir('..')
+        
+        
+        
 
         self.gui.top.update()
+        
 
     def video(self):
         self.gui.Original_button.config(state=DISABLED)
         self.__protocol.send_message('command', 'start_video')
+        
+    
+    def front_video(self):
+        self.gui.front_button.config(state=DISABLED)
+        self.__protocol.send_message('command', 'start_front_video')
+    
+    
     def F_on_press(self,event):
 
         self.__protocol.send_message('button', 'F_on')
@@ -143,9 +203,12 @@ class Socket:
         self.__protocol.send_message('speedData', speedData)
 
     def Quit(self):
-        Quit_button = self.gui.Button(self.gui.top, text="Quit", fg="blue", command=quit).place(x=1200, y=220)
+        Quit_button = self.gui.Button(self.gui.top, text="Quit", fg="blue", command=quit).place(x=200, y=100)
 
     def release(self):
         self.__protocol.send_message('command', 'end_video')
         self.gui.Original_button.config(state=NORMAL)
+    def front_release(self):
+        self.__protocol.send_message('command', 'end_front_video')
+        self.gui.front_button.config(state=NORMAL)
 
