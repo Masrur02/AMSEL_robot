@@ -122,7 +122,7 @@ class Protocol:
 
     def __recv_execute_data(self):
         msg_type, msg_content = self.__data_socket.recv_a_message()
-        print(msg_type, 'AAA')
+        print(msg_type, '')
         Thread(target=self.__on_message_handlers.get(msg_type), args=(msg_content,)).start()
 
     def __check_ready(self):
