@@ -32,6 +32,7 @@ import tensorflow.keras.backend as K
 class Server:
     def __init__(self):
         self.__send_video = False
+        self.__send_front_video = False
         message_handlers = {
             'command': self.commandHandler,
             'button': self.onButtonClick,
@@ -44,10 +45,17 @@ class Server:
         commands = {
             'end_video': self.onEndVideo,
             'start_video': self.onStartVideo,
+            "start_front_video":self.onFrontVideo,
+            'end_front_video': self.offFrontVideo,
             "startSignal": self.onSignal,
-            'autonomous': self.onAutonomous
+            'autonomous': self.onAutonomous,
+            'disconnect': self.disconnect
         }
         commands.get(command)()
+
+    def disconnect(self):
+        self.onEndVideo()
+        self.__protocol.reinit()
 
     def onButtonClick(self, button):
         buttons = {
@@ -67,7 +75,9 @@ class Server:
         self.__protocol.wait_untill_ready()
         self.__protocol.recv_data_forever()
 
-   
+    def onFrontVideo(self):
+        thread = Thread(target=self.start_front_stream)
+        thread.start()
 
     def onStartVideo(self):
         thread = Thread(target=self.start_video_stream)
@@ -121,6 +131,9 @@ class Server:
 
     def onEndVideo(self):
         self.__send_video = False
+
+    def offFrontVideo(self):
+        self.__send_front_video = False
 
     def onTrigger(self, triggerData):
         self.time = triggerData.get("time")
@@ -216,6 +229,21 @@ class Server:
             t = istest()
             if t == True:
                 break
+                
+    def start_front_stream(self):
+        if self.__send_front_video:
+            return  # ignore if already sending videos
+        self.__send_front_video = True
+        front = cv2.VideoCapture(1)
+        front.set(cv2.CAP_PROP_FRAME_WIDTH, 240)
+        front.set(cv2.CAP_PROP_FRAME_HEIGHT, 160)
+        front.set(cv2.CAP_PROP_FPS, 25)
+        while (front.isOpened()):
+            _, front_frame = front.read()
+            img= cv2.resize(front_frame, (512, 512))
+            self.__protocol.send_message('front_frame',img)
+            if not self.__send_front_video:
+                front.release()
 
     def start_video_stream(self):
         if self.__send_video:
@@ -250,8 +278,8 @@ class Server:
         model = load_model('C:/Users/ASMEL/Desktop/Robot/unew_3.h5', custom_objects={'dice_loss': dice_loss, 'IOU': IOU, 'dsc': dsc})
 
         vid = cv2.VideoCapture(0)
-        vid.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        vid.set(cv2.CAP_PROP_FRAME_WIDTH, 240)
+        vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 160)
         vid.set(cv2.CAP_PROP_FPS, 25)
 
         while (vid.isOpened()):
