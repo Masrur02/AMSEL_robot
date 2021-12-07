@@ -16,6 +16,8 @@ import time
 from serial import Serial
 import numpy as np
 import cv2
+
+
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow import keras
@@ -65,12 +67,7 @@ class Server:
         self.__protocol.wait_untill_ready()
         self.__protocol.recv_data_forever()
 
-    '''def read(self):
-        while True:
-            self.a = AnalogIn(ads, ADS.P0)
-            self.b=self.a.voltage*1000
-            #print(self.b)
-            #time.sleep(0.5)'''
+   
 
     def onStartVideo(self):
         thread = Thread(target=self.start_video_stream)
@@ -131,6 +128,8 @@ class Server:
 
     def onSpeed(self, speedData):
         self.speed = speedData.get("speed")
+        print(self.speed)
+        self.speed1=self.speed*4
 
     def startSignal(self):
 
@@ -140,7 +139,7 @@ class Server:
 
         Triggering = float(self.trigger)
         t_s = .001 * t_ms
-        print(t_s)
+        #print(t_s)
         fre = 50000
         Num_samples = int(t_s * fre)
 
@@ -159,7 +158,7 @@ class Server:
             task = nidaqmx.Task()
 
             task.ai_channels.add_ai_accel_chan("cDAQ1Mod1/ai0")
-            task.ai_channels.add_ai_accel_chan("cDAQ1Mod1/ai2")
+            task.ai_channels.add_ai_accel_chan("cDAQ1Mod1/ai1")
 
             task.timing.cfg_samp_clk_timing(
                 fre, source="", active_edge=Edge.RISING, sample_mode=AcquisitionType.FINITE, samps_per_chan=N)
@@ -178,31 +177,41 @@ class Server:
             else:
                 task.close()
 
-                print("Value found")
+                #print("Value found")
                 position = next(x for x, val in enumerate(v_ch0)
                                 if val > Triggering)
                 print("position", position)
 
                 first_index = int(position - pre_trig)
-                last_index = int(first_index + Num_samples)
+                if first_index <0:
+                    print("No value found")
+                    return False
+                else :
+                    #print("Value found")
+                    last_index = int(first_index + Num_samples)
+                    if last_index > (N-pre_trig):
+                        print("No value found")
+                        return False
+                    else:
+                        
+                        print("Value found")
+                        print("f", first_index)
+                        print("l", last_index)
 
-                print("f", first_index)
-                print("l", last_index)
+                        y = v_ch0[first_index:last_index]
+                        y1 = v_ch1[first_index:last_index]
 
-                y = v_ch0[first_index:last_index]
-                y1 = v_ch1[first_index:last_index]
-
-                # print("y",y)
-                s = (len(y))
-                s1 = len(y1)
-                print(s1)
-                X = list(range(s))
-                signalData = {"X": X, "y": y, "y1":y1}
-                self.__protocol.send_message('signalData', signalData)
+                        # print("y",y)
+                        s = (len(y))
+                        s1 = len(y1)
+                        print(s1)
+                        X = list(range(s))
+                        signalData = {"X": X, "y": y, "y1":y1}
+                        self.__protocol.send_message('signalData', signalData)
 
 
 
-                return True
+                        return True
         while True:
             t = istest()
             if t == True:
@@ -238,9 +247,9 @@ class Server:
             iou = intersection / union
 
             return iou
-        model = load_model('E:/Work/Khan_robot/server_e/unew_3.h5', custom_objects={'dice_loss': dice_loss, 'IOU': IOU, 'dsc': dsc})
+        model = load_model('C:/Users/ASMEL/Desktop/Robot/unew_3.h5', custom_objects={'dice_loss': dice_loss, 'IOU': IOU, 'dsc': dsc})
 
-        vid = cv2.VideoCapture(1)
+        vid = cv2.VideoCapture(0)
         vid.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         vid.set(cv2.CAP_PROP_FPS, 25)
@@ -270,25 +279,25 @@ class Server:
     def forward(self):
         print("Forward")
 
-        s.write(str.encode("vc1={speed}\n".format(speed=self.speed)))
+        s.write(str.encode("vc1={speed}\n".format(speed=self.speed1)))
         s.write(str.encode("vc2={speed}\n".format(speed=self.speed)))
 
     def left(self):
         print("Left")
 
-        s.write(str.encode("vc1={speed}\n".format(speed=self.speed)))
-        s.write(str.encode("vc2=-{speed}\n".format(speed=self.speed)))
+        s.write(str.encode("vc1=-{speed}\n".format(speed=self.speed1)))
+        s.write(str.encode("vc2={speed}\n".format(speed=self.speed)))
 
     def right(self):
         print("Right")
 
-        s.write(str.encode("vc1=-{speed}\n".format(speed=self.speed)))
-        s.write(str.encode("vc2={speed}\n".format(speed=self.speed)))
+        s.write(str.encode("vc1={speed}\n".format(speed=self.speed1)))
+        s.write(str.encode("vc2=-{speed}\n".format(speed=self.speed)))
 
     def back(self):
         print("Back")
 
-        s.write(str.encode("vc1=-{speed}\n".format(speed=self.speed)))
+        s.write(str.encode("vc1=-{speed}\n".format(speed=self.speed1)))
         s.write(str.encode("vc2=-{speed}\n".format(speed=self.speed)))
 
     def stop(self):
