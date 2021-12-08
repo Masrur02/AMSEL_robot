@@ -235,8 +235,8 @@ class Server:
             return  # ignore if already sending videos
         self.__send_front_video = True
         front = cv2.VideoCapture(1)
-        front.set(cv2.CAP_PROP_FRAME_WIDTH, 240)
-        front.set(cv2.CAP_PROP_FRAME_HEIGHT, 160)
+        front.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        front.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         front.set(cv2.CAP_PROP_FPS, 25)
         while (front.isOpened()):
             _, front_frame = front.read()
@@ -278,8 +278,8 @@ class Server:
         model = load_model('C:/Users/ASMEL/Desktop/Robot/unew_3.h5', custom_objects={'dice_loss': dice_loss, 'IOU': IOU, 'dsc': dsc})
 
         vid = cv2.VideoCapture(0)
-        vid.set(cv2.CAP_PROP_FRAME_WIDTH, 240)
-        vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 160)
+        vid.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         vid.set(cv2.CAP_PROP_FPS, 25)
 
         while (vid.isOpened()):
