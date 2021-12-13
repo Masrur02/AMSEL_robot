@@ -179,12 +179,9 @@ class Gui:
         self.front_button.place(x=190, y=10)
         self.front_Off_button = Button(self.Video3, text="Video off", fg="blue", command=self.net_connection.front_release)
         self.front_Off_button.place(x=400, y=10)
-        
-        
-        
-        
-        
-        
 
-        self.Quit_button = Button(self.Network, text="Quit", fg="blue", command=top.destroy).place(x=100, y=100)
+        self.Quit_button = Button(self.Network, text="Quit", fg="blue", command=self.quit_safely).place(x=100, y=100)
 
+    def quit_safely(self):
+        self.net_connection.disconnect()
+        self.top.destroy()

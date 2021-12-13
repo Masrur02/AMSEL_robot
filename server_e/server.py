@@ -162,12 +162,6 @@ class Server:
         def istest():
             number = 1
 
-
-
-
-
-
-
             task = nidaqmx.Task()
 
             task.ai_channels.add_ai_accel_chan("cDAQ1Mod1/ai0")

@@ -15,7 +15,8 @@ class Socket:
         self.on_message = {
             'frame': self.onFrameAsync,
             'front_frame':self.onFrontFrameAsync,
-            'signalData':self.onsignalData
+            'signalData':self.onsignalData,
+            'u_there': lambda x: None
 
         }
         self.gui = None
@@ -30,6 +31,9 @@ class Socket:
         self.gui.Connect_button.config(state=NORMAL)
         self.gui.Connect_button["text"] = "Connect"
     
+    def disconnect(self):
+        self.__protocol.send_message('command', 'disconnect')
+
     def set_gui(self, gui):
         self.gui = gui
 

@@ -129,6 +129,7 @@ class Protocol:
     def reinit(self):
         self.__is_ready = False
         self.will_recv_data = False
+        self.__pool_connection = False
 
         if self.__video_socket:
             self.__video_socket.diconnect()
@@ -150,6 +151,20 @@ class Protocol:
         Thread(target=self.__data_socket.wait_for_connection).start()
         Thread(target=self.__front_socket.wait_for_connection).start()
         Thread(target=self.__check_ready).start()
+
+        check_connection_thread = Thread(target=self.__check_connected)
+        check_connection_thread.daemon = True
+        check_connection_thread.start()
+
+    def __check_connected(self):
+        while not self.__pool_connection:
+            time.sleep(.5)
+        while self.__pool_connection:
+            try:
+                self.__data_socket.send_message('u_there','hi')
+                time.sleep(.5)
+            except:
+                self.reinit()
 
     def send_message(self, message_type, message_content):
         if message_type == 'frame':
@@ -174,6 +189,7 @@ class Protocol:
     def __check_ready(self):
         while True:
             if self.__video_socket.isConnected and self.__data_socket.isConnected and self.__front_socket.isConnected:
+                self.__pool_connection = True
                 self.__is_ready = True
                 break
             time.sleep(1)
@@ -189,6 +205,6 @@ class Protocol:
     def recv_data_forever(self):
         if not self.__is_ready:
             raise RuntimeError('Did not received connections yet.')
-        # self.will_recv_data = True
-        while True:
+        self.will_recv_data = True
+        while self.will_recv_data:
             self.__recv_execute_data()
