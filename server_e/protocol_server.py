@@ -7,9 +7,11 @@ from socket import socket as stock_socket
 from socket import TCP_NODELAY, IPPROTO_TCP, SHUT_RDWR
 from queue import Queue
 import time
+import warnings
 
 CHUNK_SIZE = 32 * 1024
 
+warnings.filterwarnings(action="ignore", message="unclosed", category=ResourceWarning)
 
 class Socket:
     def __init__(self, address='0.0.0.0', port=58011, mode='server', queue=False, nodelay=True):
@@ -49,8 +51,8 @@ class Socket:
         self.__disconnected = True
         self.__will_send_queue = False
         self.__is_connected = False
-        time.sleep(2) # finish current sending
-        self.__socket.shutdown(SHUT_RDWR)
+        #time.sleep(2) # finish current sending
+        #self.__socket.shutdown(SHUT_RDWR)
         self.__socket.close()
 
     def __send_message_impl(self, message_type, message_content):
@@ -129,16 +131,21 @@ class Protocol:
     def reinit(self):
         self.__is_ready = False
         self.will_recv_data = False
+        self.__pool_connection = False
+        time.sleep(.1)
 
-        if self.__video_socket:
-            self.__video_socket.diconnect()
-            print('Disconneted Video Socket.')
-        if self.__data_socket:
-            self.__data_socket.diconnect()
-            print('Disconneted Data Socket.')
-        if self.__front_socket:
-            self.__front_socket.diconnect()
-            print('Disconneted FrontSocket.')
+        try:
+            if self.__video_socket:
+                self.__video_socket.diconnect()
+                print('Disconneted Video Socket.')
+            if self.__data_socket:
+                self.__data_socket.diconnect()
+                print('Disconneted Data Socket.')
+            if self.__front_socket:
+                self.__front_socket.diconnect()
+                print('Disconneted FrontSocket.')
+        except:
+            print('Disconnect Error.')
         
         self.__video_socket = Socket(port=self.__video_port)
         self.__data_socket = Socket(port=self.__data_port)
@@ -151,13 +158,39 @@ class Protocol:
         Thread(target=self.__front_socket.wait_for_connection).start()
         Thread(target=self.__check_ready).start()
 
+        check_connection_thread = Thread(target=self.__check_connected)
+        check_connection_thread.daemon = True
+        check_connection_thread.start()
+
+    def __check_connected(self):
+        while not self.__pool_connection:
+            time.sleep(.5)
+        while self.__pool_connection:
+            try:
+                self.__data_socket.send_message('u_there','hi')
+                time.sleep(.5)
+            except:
+                self.reinit()
+
     def send_message(self, message_type, message_content):
         if message_type == 'frame':
-            self.__video_socket.send_message(message_type, message_content)
+            try:
+                self.__video_socket.send_message(message_type, message_content)
+            except ConnectionResetError:
+                if self.__is_ready:
+                    self.reinit()
         if message_type == 'front_frame':
-            self.__front_socket.send_message(message_type, message_content)
+            try:
+                self.__front_socket.send_message(message_type, message_content)
+            except ConnectionResetError:
+                if self.__is_ready:
+                    self.reinit()
         else:
-            self.__data_socket.send_message(message_type, message_content)
+            try:
+                self.__data_socket.send_message(message_type, message_content)
+            except ConnectionResetError:
+                if self.__is_ready:
+                    self.reinit()
 
     def send_frame(self, frame):
         self.__video_socket.send_message('frame', frame)
@@ -165,7 +198,12 @@ class Protocol:
         self.__front_socket.send_message('front_frame', front_frame)
 
     def __recv_execute_data(self):
-        msg_type, msg_content = self.__data_socket.recv_a_message()
+        try:
+            msg_type, msg_content = self.__data_socket.recv_a_message()
+        except ConnectionResetError:
+            if self.__is_ready:
+                self.reinit()
+            return
         if msg_type is None:
             return
         print(msg_type, '')
@@ -174,6 +212,7 @@ class Protocol:
     def __check_ready(self):
         while True:
             if self.__video_socket.isConnected and self.__data_socket.isConnected and self.__front_socket.isConnected:
+                self.__pool_connection = True
                 self.__is_ready = True
                 break
             time.sleep(1)
@@ -187,8 +226,9 @@ class Protocol:
             time.sleep(1)
 
     def recv_data_forever(self):
-        if not self.__is_ready:
-            raise RuntimeError('Did not received connections yet.')
-        # self.will_recv_data = True
         while True:
-            self.__recv_execute_data()
+            if not self.__is_ready:
+                time.sleep(.05)
+            self.will_recv_data = True
+            while self.will_recv_data:
+                self.__recv_execute_data()
