@@ -49,8 +49,8 @@ class Socket:
         self.__disconnected = True
         self.__will_send_queue = False
         self.__is_connected = False
-        time.sleep(2) # finish current sending
-        self.__socket.shutdown(SHUT_RDWR)
+        #time.sleep(2) # finish current sending
+        #self.__socket.shutdown(SHUT_RDWR)
         self.__socket.close()
 
     def __send_message_impl(self, message_type, message_content):
@@ -130,16 +130,20 @@ class Protocol:
         self.__is_ready = False
         self.will_recv_data = False
         self.__pool_connection = False
+        time.sleep(.1)
 
-        if self.__video_socket:
-            self.__video_socket.diconnect()
-            print('Disconneted Video Socket.')
-        if self.__data_socket:
-            self.__data_socket.diconnect()
-            print('Disconneted Data Socket.')
-        if self.__front_socket:
-            self.__front_socket.diconnect()
-            print('Disconneted FrontSocket.')
+        try:
+            if self.__video_socket:
+                self.__video_socket.diconnect()
+                print('Disconneted Video Socket.')
+            if self.__data_socket:
+                self.__data_socket.diconnect()
+                print('Disconneted Data Socket.')
+            if self.__front_socket:
+                self.__front_socket.diconnect()
+                print('Disconneted FrontSocket.')
+        except:
+            print('Disconnect Error.')
         
         self.__video_socket = Socket(port=self.__video_port)
         self.__data_socket = Socket(port=self.__data_port)
@@ -180,7 +184,11 @@ class Protocol:
         self.__front_socket.send_message('front_frame', front_frame)
 
     def __recv_execute_data(self):
-        msg_type, msg_content = self.__data_socket.recv_a_message()
+        try:
+            msg_type, msg_content = self.__data_socket.recv_a_message()
+        except ConnectionResetError:
+            self.reinit()
+            return
         if msg_type is None:
             return
         print(msg_type, '')
@@ -203,8 +211,9 @@ class Protocol:
             time.sleep(1)
 
     def recv_data_forever(self):
-        if not self.__is_ready:
-            raise RuntimeError('Did not received connections yet.')
-        self.will_recv_data = True
-        while self.will_recv_data:
-            self.__recv_execute_data()
+        while True:
+            if not self.__is_ready:
+                time.sleep(.05)
+            self.will_recv_data = True
+            while self.will_recv_data:
+                self.__recv_execute_data()
