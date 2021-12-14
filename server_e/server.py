@@ -162,12 +162,6 @@ class Server:
         def istest():
             number = 1
 
-
-
-
-
-
-
             task = nidaqmx.Task()
 
             task.ai_channels.add_ai_accel_chan("cDAQ1Mod1/ai0")
@@ -241,6 +235,7 @@ class Server:
         while (front.isOpened()):
             _, front_frame = front.read()
             img= cv2.resize(front_frame, (512, 512))
+            
             self.__protocol.send_message('front_frame',img)
             if not self.__send_front_video:
                 front.release()
@@ -300,6 +295,8 @@ class Server:
             result = cv2.addWeighted(image2, 0.5, crack_image, 0.5, 0)
             # result=result * 255
             result = result.astype(np.uint8)
+            
+            
             self.__protocol.send_message('frame', result)
             if not self.__send_video:
                 vid.release()
