@@ -9,13 +9,14 @@ import os
 from tkinter import *
 
 class Socket:
-    host='192.168.0.53'
+    host='192.168.0.3'
     # host = '127.0.0.1'
     def __init__(self):
         self.on_message = {
             'frame': self.onFrameAsync,
             'front_frame':self.onFrontFrameAsync,
-            'signalData':self.onsignalData
+            'signalData':self.onsignalData,
+            'u_there': lambda x: None
 
         }
         self.gui = None
@@ -30,6 +31,9 @@ class Socket:
         self.gui.Connect_button.config(state=NORMAL)
         self.gui.Connect_button["text"] = "Connect"
     
+    def disconnect(self):
+        self.__protocol.send_message('command', 'disconnect')
+
     def set_gui(self, gui):
         self.gui = gui
 
@@ -75,13 +79,12 @@ class Socket:
         file2="Channel2__"+ str(time)
         filename1 = "%s.csv" % file1
         filename2 = "%s.csv" % file2
-        os.chdir(folder)
-
-        df1.to_csv(filename1, index=False)
-        df2.to_csv(filename2, index=False)
         
-        os.chdir('..')
-        os.chdir('..')
+
+        df1.to_csv(folder + "/" + filename1, index=False)
+        df2.to_csv(folder+ "/" + filename2, index=False)
+        
+        
 
 
 
@@ -89,7 +92,8 @@ class Socket:
         #global flag
         #flag = True
 
-
+        
+    
         frame = cv2.flip(front_frame, 1)
         cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
         img = PIL.Image.fromarray(cv2image)
@@ -115,7 +119,7 @@ class Socket:
         #global flag
         #flag = True
 
-
+        
         frame = cv2.flip(frame, 1)
         cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
         img = PIL.Image.fromarray(cv2image)
@@ -142,11 +146,9 @@ class Socket:
             os.makedirs(folder1)
         time = time.time()
         file = str(time)
-        os.chdir(folder1)
-        #print(os.getcwd())
-        cv2.imwrite('./' + str(file) + '.jpg', frame)
-        os.chdir('..')
-        os.chdir('..')
+       
+        cv2.imwrite(folder1 +'/' + str(file) + '.jpg', frame)
+        
         
         
         
@@ -211,4 +213,3 @@ class Socket:
     def front_release(self):
         self.__protocol.send_message('command', 'end_front_video')
         self.gui.front_button.config(state=NORMAL)
-
