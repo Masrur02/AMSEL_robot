@@ -7,9 +7,11 @@ from socket import socket as stock_socket
 from socket import TCP_NODELAY, IPPROTO_TCP, SHUT_RDWR
 from queue import Queue
 import time
+import warnings
 
 CHUNK_SIZE = 32 * 1024
 
+warnings.filterwarnings(action="ignore", message="unclosed", category=ResourceWarning)
 
 class Socket:
     def __init__(self, address='0.0.0.0', port=58011, mode='server', queue=False, nodelay=True):
@@ -172,11 +174,23 @@ class Protocol:
 
     def send_message(self, message_type, message_content):
         if message_type == 'frame':
-            self.__video_socket.send_message(message_type, message_content)
+            try:
+                self.__video_socket.send_message(message_type, message_content)
+            except ConnectionResetError:
+                if self.__is_ready:
+                    self.reinit()
         if message_type == 'front_frame':
-            self.__front_socket.send_message(message_type, message_content)
+            try:
+                self.__front_socket.send_message(message_type, message_content)
+            except ConnectionResetError:
+                if self.__is_ready:
+                    self.reinit()
         else:
-            self.__data_socket.send_message(message_type, message_content)
+            try:
+                self.__data_socket.send_message(message_type, message_content)
+            except ConnectionResetError:
+                if self.__is_ready:
+                    self.reinit()
 
     def send_frame(self, frame):
         self.__video_socket.send_message('frame', frame)
@@ -187,7 +201,8 @@ class Protocol:
         try:
             msg_type, msg_content = self.__data_socket.recv_a_message()
         except ConnectionResetError:
-            self.reinit()
+            if self.__is_ready:
+                self.reinit()
             return
         if msg_type is None:
             return
