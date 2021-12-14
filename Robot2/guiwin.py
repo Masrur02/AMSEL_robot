@@ -6,7 +6,7 @@ import matplotlib
 import PIL
 import cv2
 from multiprocessing import Process
-
+import sys
 matplotlib.use('TkAgg')
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -61,9 +61,15 @@ class Gui:
         self.Network_label = Label(self.Master, text="Network Settings",font = "Times 16",fg="blue").place(x=5, y=3)
         
         self.Ip_label = Label(self.Network, text="IP",fg='blue',font="Times 10").place(x=10, y=40)
-        self.Ip_entry = Entry(self.Network).place(x=30, y=40, width=100)
+        name=StringVar()
+        name.set("192.168.0.3")
+        self.Ip_entry = Entry(self.Network,textvariable=name).place(x=30, y=40, width=100)
+        
         self.Port_label = Label(self.Network, text="Port",fg='blue',font="Times 10").place(x=10, y=70)
-        self.Port_entry = Entry(self.Network).place(x=40, y=70, width=90)
+        
+        name2=StringVar()
+        name2.set("58011")
+        self.Port_entry = Entry(self.Network,textvariable=name2).place(x=40, y=70, width=90)
         self.Connect_button = Button(self.Network, text="Connect", fg="blue", command=self.net_connection.connection)
         self.Connect_button.place(x=20, y=100)
         #self.Quit_button = Button(self.Network, text="Quit", fg="blue", command=self.net_connection.quit)
@@ -179,12 +185,9 @@ class Gui:
         self.front_button.place(x=190, y=10)
         self.front_Off_button = Button(self.Video3, text="Video off", fg="blue", command=self.net_connection.front_release)
         self.front_Off_button.place(x=400, y=10)
-        
-        
-        
-        
-        
-        
 
-        self.Quit_button = Button(self.Network, text="Quit", fg="blue", command=top.destroy).place(x=100, y=100)
+        self.Quit_button = Button(self.Network, text="Quit", fg="blue", command=sys.exit).place(x=100, y=100)
 
+    def quit_safely(self):
+        self.net_connection.disconnect()
+        self.top.destroy()
