@@ -6,7 +6,7 @@ import matplotlib
 import PIL
 import cv2
 from multiprocessing import Process
-
+import sys
 matplotlib.use('TkAgg')
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -36,22 +36,25 @@ class Gui:
         self.Robot = Frame(self.Master, height=150,width=350, highlightbackground='blue', highlightthickness=3)
         self.Robot.place(x=160,y=33)
         self.Video = Frame(self.Master, height=150,width=80, highlightbackground='blue', highlightthickness=3)
-        self.Video.place(x=700,y=33)
+        self.Video.place(x=680,y=33)
         self.Video2 = Frame(self.Master, height=293,width=330, highlightbackground='blue', highlightthickness=2)
         self.Video2.place(x=450,y=192)
         self.lmain = Label(self.Video2)
         self.Video2_label = Label(self.Video2, text="Video",fg='blue',font="Times 18").place(x=120, y=5)
         
-        self.Video3 = Frame(self.Master, height=450,width=640, highlightbackground='blue', highlightthickness=2)
-        self.Video3.place(x=800,y=30)
+        self.Video3 = Frame(self.Master, height=450,width=500, highlightbackground='blue', highlightthickness=2)
+        self.Video3.place(x=950,y=30)
         self.lmain2 = Label(self.Video3)
-        self.Video3_label = Label(self.Video3, text="Front Camera",fg='blue',font="Times 18").place(x=250, y=5)
+        self.Video3_label = Label(self.Video3, text="Front Camera",fg='blue',font="Times 18").place(x=150, y=5)
         
         
         self.Network = Frame(top, height=150,width=150, highlightbackground='blue', highlightthickness=3)
         self.Network.place(x=15,y=40)
         self.Sensor = Frame(top, height=150,width=160, highlightbackground='blue', highlightthickness=3)
-        self.Sensor.place(x=530,y=40)
+        self.Sensor.place(x=780,y=40)
+
+        self.Grid = Frame(top, height=150,width=150, highlightbackground='blue', highlightthickness=3)
+        self.Grid.place(x=530,y=40)
 
         self.Excel = Frame(self.Robot,height=120,width=140, highlightbackground='blue', highlightthickness=3)
         self.Excel.place(x=10,y=3)
@@ -61,18 +64,25 @@ class Gui:
         self.Network_label = Label(self.Master, text="Network Settings",font = "Times 16",fg="blue").place(x=5, y=3)
         
         self.Ip_label = Label(self.Network, text="IP",fg='blue',font="Times 10").place(x=10, y=40)
-        self.Ip_entry = Entry(self.Network).place(x=30, y=40, width=100)
+        name=StringVar()
+        name.set("192.168.0.20")
+        self.Ip_entry = Entry(self.Network,textvariable=name).place(x=30, y=40, width=100)
+        
         self.Port_label = Label(self.Network, text="Port",fg='blue',font="Times 10").place(x=10, y=70)
-        self.Port_entry = Entry(self.Network).place(x=40, y=70, width=90)
+        
+        name2=StringVar()
+        name2.set("58011")
+        self.Port_entry = Entry(self.Network,textvariable=name2).place(x=40, y=70, width=90)
         self.Connect_button = Button(self.Network, text="Connect", fg="blue", command=self.net_connection.connection)
         self.Connect_button.place(x=20, y=100)
         #self.Quit_button = Button(self.Network, text="Quit", fg="blue", command=self.net_connection.quit)
         #self.Quit_button.place(x=100, y=100)
 
         #####Sensor_Box####
-        self.Sensor_label = Label(self.Master, text="Sensor",font = "Times 16",fg="blue").place(x=550, y=3)
-        self.Image_label = Label(self.Master, text="Detect",font = "Times 16",fg="blue").place(x=700, y=3)
+        self.Sensor_label = Label(self.Master, text="Sensor",font = "Times 16",fg="blue").place(x=830, y=3)
+        self.Image_label = Label(self.Master, text="Detect",font = "Times 16",fg="blue").place(x=680, y=3)
         self.Robot_label = Label(self.Master, text="Robot",font = "Times 16",fg="blue").place(x=300, y=3)
+        self.Grid_label = Label(self.Master, text="Grid",font = "Times 16",fg="blue").place(x=565, y=3)
         self.Start_button = Button(self.Sensor, text="Start", fg="blue",command=self.net_connection.signal)
         self.Start_button.place(x=55, y=110)
         self.time_label = Label(self.Sensor, text="time(ms)",fg='blue',font="Times 10").place(x=5, y=28)
@@ -86,6 +96,22 @@ class Gui:
         self.Excel_button = Button(self.Sensor, text="Save", fg="blue",command=self.net_connection.save)
         self.Excel_button.place(x=100, y=90)
 
+        #####Grid_Box####
+        self.GX_label = Label(self.Grid, text="G_x(m)",fg='blue',font="Times 10").place(x=5, y=28)
+        self.GX_entry = Entry(self.Grid)
+        self.GX_entry.place(x=58, y=30, width=70)
+        
+        self.GY_label = Label(self.Grid, text="G_y(m)",fg='blue',font="Times 10").place(x=5, y=58)
+        self.GY_entry = Entry(self.Grid)
+        self.GY_entry.place(x=58, y=58, width=70)
+
+        self.SendGrid_button = Button(self.Grid, text="SendGrid", fg="blue", command=self.net_connection.grid)
+        self.SendGrid_button.place(x=55, y=85)
+    
+        '''self.GY_label = Label(self.Grid, text="G_y(m)",fg='blue',font="Times 10").place(x=5, y=50)
+        self.GY_entry = Entry(self.Grid)
+        self.GY_entry.place(x=58, y=50, width=90)'''
+
         ######Excel_Box####
         self.Excel_label = Label(self.Excel, text="Robot Speed",font = "Times 12",fg="blue").place(x=25, y=3)
         
@@ -93,7 +119,10 @@ class Gui:
         self.speed_entry = Entry(self.Excel)
         self.speed_entry.place(x=40, y=30, width=80)
         self.speed_Send_button = Button(self.Excel, text="Speed_Send", fg="blue", command=self.net_connection.speed)
-        self.speed_Send_button.place(x=30, y=60)
+        self.speed_Send_button.place(x=30, y=55)
+        
+        self.position_Zero_button = Button(self.Excel, text="position_Zero", fg="blue", command=self.net_connection.zero)
+        self.position_Zero_button.place(x=30, y=85)
         #####Navigation_Box####
         self.Navigation_label = Label(self.Navigation, text="Robot Navigation",font = "Times 12",fg="blue").place(x=25, y=3)
         self.Forward_button = Button(self.Navigation, text="F", fg="blue")
@@ -114,7 +143,8 @@ class Gui:
         self.Back_button.place(x=55, y=80)
         self.Back_button.bind("<ButtonPress>", self.net_connection.B_on_press)
         self.Back_button.bind("<ButtonRelease>", self.net_connection.B_on_release)
-        self.A_button = Button(self.Navigation, text="Auto", fg="blue").place(x=110, y=50)
+        self.A_button = Button(self.Navigation, text="S.Auto", fg="blue",command=self.net_connection.semiAuto)
+        self.A_button.place(x=110, y=50)
 
 
         self.fig = Figure(figsize=(6, 4))
@@ -124,7 +154,6 @@ class Gui:
         a.plot("", color='red')
         a.clear()
         b = self.fig.add_subplot(2,1,2)
-        
         b.plot("", color='blue')
         b.clear()
        
@@ -146,7 +175,7 @@ class Gui:
         b.tick_params(axis='x', colors='blue')
         b.tick_params(axis='y', colors='blue')
         self.plot = a
-        self.plt=b
+        self.plt = b
         
         
         
@@ -176,15 +205,12 @@ class Gui:
         
         ####### Front Camera ########
         self.front_button = Button(self.Video3, text="Video", fg="blue",command=self.net_connection.front_video)
-        self.front_button.place(x=190, y=10)
+        self.front_button.place(x=90, y=10)
         self.front_Off_button = Button(self.Video3, text="Video off", fg="blue", command=self.net_connection.front_release)
-        self.front_Off_button.place(x=400, y=10)
-        
-        
-        
-        
-        
-        
+        self.front_Off_button.place(x=300, y=10)
 
-        self.Quit_button = Button(self.Network, text="Quit", fg="blue", command=top.destroy).place(x=100, y=100)
+        self.Quit_button = Button(self.Network, text="Quit", fg="blue", command=sys.exit).place(x=100, y=100)
 
+    def quit_safely(self):
+        self.net_connection.disconnect()
+        self.top.destroy()
