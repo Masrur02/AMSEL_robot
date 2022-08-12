@@ -17,6 +17,7 @@ class Socket:
             'bw_frame':self.onbwFrameAsync,
             'front_frame':self.onFrontFrameAsync,
             'signalData':self.onsignalData,
+            "AsignalData":self.AonsignalData,
             "feedData":self.onfeedData,
             'u_there': lambda x: None
 
@@ -52,6 +53,9 @@ class Socket:
     
     def onsignalData(self, signalData):
         Thread(target=self.onSignal, args=(signalData,)).start()
+
+    def AonsignalData(self, AsignalData):
+        Thread(target=self.AonSignal, args=(AsignalData,)).start()
     def onfeedData(self, feedData):
         Thread(target=self.onfeed, args=(feedData,)).start()
     
@@ -59,9 +63,10 @@ class Socket:
     def onSignal(self,signalData):
         self.gui.plot.clear()
         self.gui.plt.clear()
-        self.x = signalData.get("X")
-        self.y = signalData.get("y")
-        self.y1 = signalData.get("y1")
+        self.x = signalData.get("sample")
+        self.y = signalData.get("channel1")
+        self.y1 = signalData.get("channel2")
+        
         #print(self.y)
         #print(self.y1)
         
@@ -71,9 +76,52 @@ class Socket:
         self.gui.plot.clear()
         self.gui.plt.clear()
         self.gui.Start_button.config(state=NORMAL)
+
+    def AonSignal(self,AsignalData):
+        self.gui.plot.clear()
+        self.gui.plt.clear()
+        self.sample = AsignalData.get("sample")
+        self.channel1 = AsignalData.get("channel1")
+        self.channel2 = AsignalData.get("channel2")
+        self.rec_x=AsignalData.get("rec_x")
+        self.rec_y=AsignalData.get("rec_y")
+        #print(self.y)
+        #print(self.y1)
+        
+        self.gui.plot.plot(self.sample, self.channel1,color='red')
+        self.gui.plt.plot(self.sample, self.channel2,color='blue')
+        self.gui.canvas.draw()
+        self.gui.plot.clear()
+        self.gui.plt.clear()
+        self.gui.Start_button.config(state=NORMAL)
+        import pandas as pd
+        from datetime import datetime
+        import time
+        today = datetime.now()
+
+        directory = today.strftime('%Y%m%d')
+       
+        path = "AutoRecord"
+        folder=os.path.join(path, directory)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        list_dict1 = {'sample': self.sample, 'channel1': self.channel1}
+        list_dict2 = {'sample': self.sample, 'y': self.channel2}
+        
+        df1 = pd.DataFrame(list_dict1)
+        df2 = pd.DataFrame(list_dict2)
+        time=time.time()
+        file1="Channel1__"+ str(time)+"_"+str(self.rec_x)+","+str(self.rec_y)
+        file2="Channel2__"+ str(time)+"_"+str(self.rec_x)+","+str(self.rec_y)
+        filename1 = "%s.csv" % file1
+        filename2 = "%s.csv" % file2
+        
+
+        df1.to_csv(folder + "/" + filename1, index=False)
+        df2.to_csv(folder+ "/" + filename2, index=False)
     def onfeed(self,feedData):
         print(feedData)
-        self.gui.Start_button.config(state=NORMAL)
+        '''self.gui.Start_button.config(state=NORMAL)
         self.gui.Send_button.config(state=NORMAL)
         self.gui.Excel_button.config(state=NORMAL)
         self.gui.Right_button.config(state=NORMAL)
@@ -85,7 +133,7 @@ class Socket:
         self.gui.position_Zero_button.config(state=NORMAL)
         
         self.gui.Original_button.config(state=NORMAL)
-        self.gui.Off_button.config(state=NORMAL)
+        self.gui.Off_button.config(state=NORMAL)'''
         print("All Done")
         
         
@@ -271,7 +319,7 @@ class Socket:
         self.gui.Start_button.config(state=DISABLED)
     
     def semiAuto(self):
-        self.gui.Start_button.config(state=DISABLED)
+        '''self.gui.Start_button.config(state=DISABLED)
         self.gui.Send_button.config(state=DISABLED)
         self.gui.Excel_button.config(state=DISABLED)
         self.gui.Right_button.config(state=DISABLED)
@@ -283,7 +331,7 @@ class Socket:
         self.gui.position_Zero_button.config(state=DISABLED)
         
         self.gui.Original_button.config(state=DISABLED)
-        self.gui.Off_button.config(state=DISABLED)
+        self.gui.Off_button.config(state=DISABLED)'''
         self.__protocol.send_message("command", "semiAuto")
 
         #self.gui.Start_button.config(state=DISABLED)
@@ -295,6 +343,24 @@ class Socket:
 
         triggerData = {"time": time, "trigger": trigger}
         self.__protocol.send_message('triggerData', triggerData)
+
+    def frameDown (self):
+        self.__protocol.send_message("command", "frameDown")
+    
+    def frameUp (self):
+        self.__protocol.send_message("command", "frameUp")
+
+    def Sol (self):
+        self.__protocol.send_message("command", "sol")
+
+    def LSol (self):
+        self.__protocol.send_message("command", "lsol")
+
+    def RSol (self):
+        self.__protocol.send_message("command", "rsol")
+    
+        
+        
 
     def grid (self):
         G_X = self.gui.GX_entry.get()
