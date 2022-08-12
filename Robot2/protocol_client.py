@@ -97,10 +97,11 @@ class Socket:
         return self.__is_connected
 
 class Protocol:
-    def __init__(self, on_message_handlers, front_port=59010,  video_port=59083, data_port=59084, ip='127.0.0.1'):
+    def __init__(self, on_message_handlers, front_port=59010, bw_port=59085, video_port=59083, data_port=59084, ip='127.0.0.1'):
         self.__video_socket = Socket(port=video_port, address=ip, mode='client')
         self.__data_socket = Socket(port=data_port, address=ip, mode='client')
         self.__front_socket = Socket(port=front_port, address=ip, mode='client')
+        self.__bw_socket = Socket(port=bw_port, address=ip, mode='client')
         self.__on_message_handlers = on_message_handlers
         self.__is_ready = False
 
@@ -115,11 +116,16 @@ class Protocol:
         front_thread = Thread(target=self.__recv_forever_front_video)
         front_thread.daemon = True
         self.__front_thread = front_thread
+
+        bw_thread = Thread(target=self.__recv_forever_bw_video)
+        bw_thread.daemon = True
+        self.__bw_thread = bw_thread
         
         
         Thread(target=self.__video_socket.wait_for_connection).start()
         Thread(target=self.__data_socket.wait_for_connection).start()
         Thread(target=self.__front_socket.wait_for_connection).start()
+        Thread(target=self.__bw_socket.wait_for_connection).start()
         Thread(target=self.__check_ready).start()
     
     def send_message(self, message_type, message_content):
@@ -127,12 +133,18 @@ class Protocol:
             self.__video_socket.send_message(message_type, message_content)
         if message_type == 'front_frame':
             self.__front_socket.send_message(message_type, message_content)
+
+        if message_type == 'bw_frame':
+            self.__bw_socket.send_message(message_type, message_content)
+
         else:
             self.__data_socket.send_message(message_type, message_content)
     
     def send_frame(self, frame):
         self.__video_socket.send_message('frame', frame)
-    
+
+    def send_bw_frame(self, bw_frame):
+        self.__bw_socket.send_message('bw_frame', bw_frame)
     def send_front_frame(self, front_frame):
         self.__front_socket.send_message('front_frame', front_frame)
 
@@ -151,13 +163,20 @@ class Protocol:
             msg_type, msg_content = self.__front_socket.recv_a_message()
             Thread(target=self.__on_message_handlers.get(msg_type), args=(msg_content,)).start()
 
+    def __recv_forever_bw_video(self):
+        while True:
+            msg_type, msg_content = self.__bw_socket.recv_a_message()
+            Thread(target=self.__on_message_handlers.get(msg_type), args=(msg_content,)).start()
+
     def __check_ready(self):
         while True:
-            if self.__video_socket.isConnected and self.__data_socket.isConnected and self.__front_socket.isConnected :
+            if self.__video_socket.isConnected and self.__data_socket.isConnected and self.__bw_socket.isConnected and self.__front_socket.isConnected :
                 self.__is_ready = True
                 self.__data_thread.start()
                 self.__video_thread.start()
                 self.__front_thread.start()
+                self.__bw_thread.start()
+
                 break
             time.sleep(1)
     
