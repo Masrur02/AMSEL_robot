@@ -53,6 +53,9 @@ class Gui:
         self.Sensor = Frame(top, height=150,width=160, highlightbackground='blue', highlightthickness=3)
         self.Sensor.place(x=780,y=40)
 
+        self.frame = Frame(top, height=130,width=150, highlightbackground='blue', highlightthickness=3)
+        self.frame.place(x=800,y=230)
+
         self.Grid = Frame(top, height=150,width=150, highlightbackground='blue', highlightthickness=3)
         self.Grid.place(x=530,y=40)
 
@@ -80,6 +83,7 @@ class Gui:
 
         #####Sensor_Box####
         self.Sensor_label = Label(self.Master, text="Sensor",font = "Times 16",fg="blue").place(x=830, y=3)
+        self.Step_label = Label(self.Master, text="Frame",font = "Times 16",fg="blue").place(x=840, y=190)
         self.Image_label = Label(self.Master, text="Detect",font = "Times 16",fg="blue").place(x=680, y=3)
         self.Robot_label = Label(self.Master, text="Robot",font = "Times 16",fg="blue").place(x=300, y=3)
         self.Grid_label = Label(self.Master, text="Grid",font = "Times 16",fg="blue").place(x=565, y=3)
@@ -95,6 +99,21 @@ class Gui:
         self.Send_button.place(x=55, y=80)
         self.Excel_button = Button(self.Sensor, text="Save", fg="blue",command=self.net_connection.save)
         self.Excel_button.place(x=100, y=90)
+
+        #####Frame_Box####
+        self.MotorDown_button = Button(self.frame, text="Frame Down", fg="blue",command=self.net_connection.frameDown)
+        self.MotorDown_button.place(x=50, y=10)
+        self.MotorUp_button = Button(self.frame, text="Frame Up", fg="blue",command=self.net_connection.frameUp)
+        self.MotorUp_button.place(x=50, y=50)
+
+        self.Sol_button = Button(self.frame, text="Solenoid", fg="blue",command=self.net_connection.Sol)
+        self.Sol_button.place(x=50, y=80)
+
+        self.LSol_button = Button(self.frame, text="L.S", fg="blue",command=self.net_connection.LSol)
+        self.LSol_button.place(x=15, y=50)
+
+        self.RSol_button = Button(self.frame, text="R.S", fg="blue",command=self.net_connection.RSol)
+        self.RSol_button.place(x=15, y=80)
 
         #####Grid_Box####
         self.GX_label = Label(self.Grid, text="G_x(m)",fg='blue',font="Times 10").place(x=5, y=28)
