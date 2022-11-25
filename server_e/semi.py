@@ -1,6 +1,7 @@
 import time
 import io
 import serial
+import imutils
 from serial import Serial
 import select
 import math
@@ -249,7 +250,17 @@ class MotorDriver:
 
     def turnRight(self):
         threads = []
-        steps = [-839, 847, -792, 840]
+        steps = [-862, 870, -818, 863]
+        for motor, pos in zip(self.__all_motors, steps):
+            t = Thread(target = motor.sendPosition, args=(pos,))
+            threads.append(t)
+            t.daemon = True
+            t.start()
+        for t in threads:
+            t.join()
+    def turnRight1(self):
+        threads = []
+        steps = [-862, 870, -818, 863]
         for motor, pos in zip(self.__all_motors, steps):
             t = Thread(target = motor.sendPosition, args=(pos,))
             threads.append(t)
@@ -260,7 +271,18 @@ class MotorDriver:
 
     def turnLeft(self):
         threads = []
-        steps = [866, -816, 787, -812]
+        steps = [1011, -862, 832, -858]
+        for motor, pos in zip(self.__all_motors, steps):
+            t = Thread(target = motor.sendPosition, args=(pos,))
+            threads.append(t)
+            t.daemon = True
+            t.start()
+        for t in threads:
+            t.join()
+
+    def turnLeft1(self):
+        threads = []
+        steps = [1011, -862, 832, -858]
         for motor, pos in zip(self.__all_motors, steps):
             t = Thread(target = motor.sendPosition, args=(pos,))
             threads.append(t)
@@ -314,35 +336,36 @@ class Video():
             recall = recall_m(y_true, y_pred)
             return 2*((precision*recall)/(precision+recall+K.epsilon()))
 
-        model = load_model('T.h5',custom_objects={'dice_loss':dice_loss,'IOU':IOU,'dsc':dsc,'precision_m':precision_m, 'recall_m':recall_m, 'f1_m':f1_m})
+        model = load_model('out.h5',custom_objects={'dice_loss':dice_loss,'IOU':IOU,'dsc':dsc,'precision_m':precision_m, 'recall_m':recall_m, 'f1_m':f1_m})
         vid = cv2.VideoCapture(0,cv2.CAP_DSHOW)
+        vid = cv2.VideoCapture(0,cv2.CAP_DSHOW)
+        vid.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         _, frame = vid.read()
+        print(frame.shape)
+        frame=cv2.resize(frame, (512,512))
         
-        
-        vid.release()
-        
-        
-        small_img = cv2.resize(frame, (512, 512))
-        
+        small_img = cv2.resize(frame,(512,512))
         small_img = np.array(small_img)
-        #print(small_img)
+
         small_img = small_img[None, :, :, :]
-         
-        prediction = model.predict(small_img)[0] * 255
-        bw=cv2.resize(prediction, (224,224))
-        crack_image = cv2.resize(prediction, (640, 480))
+
+        self.prediction = model.predict(small_img)[0] * 255
+        
+        bw=cv2.resize(self.prediction, (512,512))
+        crack_image = cv2.resize(self.prediction,(512,512))
         b, g, r = cv2.split(crack_image)
         z = np.zeros_like(g)
         crack_image = cv2.merge((z, b, z))
-           
+        
         image2 = frame.astype(np.float32)
 
         result = cv2.addWeighted(image2, 0.5, crack_image, 0.5, 0)
-            
+        # result=result * 255
         result = result.astype(np.uint8)
-
-        result=cv2.resize(result, (512,512))
-        return result,prediction
+        
+        result=cv2.resize(result,(512,512))
+        return frame,result,self.prediction
 
 
 
@@ -353,8 +376,13 @@ class eSignal:
 
 
     def signal(self):
-        down = b'\x5A\xF1\x01\x00\x32\xC8\x00\x46'
+        down = b'\x5A\xF1\x01\x00\x36\xB0\x00\x32'
         self.__s7.write(down)
+        c=self.__s7.read(16)
+        self.__s7.write(down)
+        c=self.__s7.read(16)
+        self.__s7.write(down)
+        
         X=[]
         while True:
             c=self.__s7.read(16)
@@ -367,7 +395,7 @@ class eSignal:
                 print("done")
                 break
     
-        t_ms = 1000
+        t_ms = 500
 
 
         Triggering = float(0.5)
@@ -379,7 +407,7 @@ class eSignal:
         N = 100000
         pre = 10
         pre_trig = int(10 / 100 * Num_samples)
-        def istest(self):
+        def istest():
             number = 1
 
             task = nidaqmx.Task()
@@ -390,12 +418,13 @@ class eSignal:
             task.timing.cfg_samp_clk_timing(
                 fre, source="", active_edge=Edge.RISING, sample_mode=AcquisitionType.FINITE, samps_per_chan=N)
 
-            sol1 = b'\x5A\xF1\x02\x01\x05\x0A\x00\x5D'
-            sol2 = b'\x5A\xF1\x03\x01\x05\x0A\x00\x5E'
-            self.__s7.write(sol1)
+            LSOL = b'\x5A\xF1\x02\x01\x05\x0A\x00\x5D'
+            #RSOL = b'\x5A\xF1\x03\x01\x05\x0A\x00\x5E'
+            self.__s7.write(LSOL)
+            #a=self.s7.read(16)
+            #self.s7.write(RSOL)
             a=self.__s7.read(16)
-            self.__s7.write(sol2)
-            a=self.__s7.read(16)
+            
             print("Hitting done")
             value = task.read(N)
             print("Value read")
@@ -431,42 +460,78 @@ class eSignal:
                 s1 = len(self.channel2)
                 print(s1)
                 self.sample = list(range(s))
-                #signalData = {"X": X, "y": y, "y1":y1}
-                #self.__protocol.send_message('signalData', signalData)
+                #signalDataA = {"sample": self.sample, "channel1": self.channel1, "channel2":self.channel2}
+                #self.__protocol.send_message('signalDataA', signalDataA)
+            return True
+
+        def istest2():
+            
+            number = 1
+
+            task = nidaqmx.Task()
+            
+
+            task.ai_channels.add_ai_accel_chan("cDAQ1Mod1/ai0")
+            task.ai_channels.add_ai_accel_chan("cDAQ1Mod1/ai1")
+
+            task.timing.cfg_samp_clk_timing(
+                fre, source="", active_edge=Edge.RISING, sample_mode=AcquisitionType.FINITE, samps_per_chan=N)
+
+            
+
+            #LSOL = b'\x5A\xF1\x02\x01\x05\x0A\x00\x5D'
+            RSOL = b'\x5A\xF1\x03\x01\x05\x0A\x00\x5E'
+            self.__s7.write(RSOL)
+            a=self.__s7.read(16)
+            
+            #a=self.s7.read(16)
+            
+            print("Hitting done")
+            value = task.read(N)
+            print("Value read")
+            v_ch0 = value[0]
+            
+            v_ch1 = value[1]
+
+            number = sum(i > Triggering for i in v_ch1)
+            print(number)
+            if number == 0:
+                print("No value found")
+
+                return False
+            else:
+                task.close()
+
+                print("Value found")
+                position = next(x for x, val in enumerate(v_ch1)
+                                if val > Triggering)
+                print("position", position)
+
+                first_index = int(position - pre_trig)
+                last_index = int(first_index + Num_samples)
+
+                print("f", first_index)
+                print("l", last_index)
+
+                self.channel11 = v_ch0[first_index:last_index]
+                self.channel22 = v_ch1[first_index:last_index]
+
+                # print("y",y)
+                s = (len(self.channel11))
+                s1 = len(self.channel22)
+                print(s1)
+                self.sample = list(range(s))
+                #signalDataB = {"sample": sample, "channel1": channel1, "channel2":channel2}
+                #self.__protocol.send_message('signalDataB', signalDataB)
             return True
         while True:
-            t = istest(self)
+            t = istest()
             if t == True:
-                break
-        return self.sample,self.channel1,self.channel2       
+                
+                t1=istest2()
+                if t1==True:
+                    break
+        return self.sample,self.channel1,self.channel2,self.channel11,self.channel22     
 
 
-    
-
-
-
-
-
-    
-
-    
-
-
-
-
-    
-        
-    
-    
-        
-    
-
-    
-
-    
-        
-    
-    
-    
-    
-    
+ 
