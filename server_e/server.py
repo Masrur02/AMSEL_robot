@@ -5,6 +5,13 @@ Created on Tue Apr 26 16:46:47 2022
 @author: almas
 """
 
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Apr 26 16:46:47 2022
+
+@author: almas
+"""
+import imutils
 from enum import Flag
 import socket
 from protocol_server import Protocol
@@ -121,10 +128,12 @@ class Server:
     def onlSol(self):
         thread = Thread(target=self.lSol)
         thread.start()
+        print("Khan")
 
     def onrSol(self):
         thread = Thread(target=self.rSol)
         thread.start()
+        print("Tuli")
 
     
     def onFrameDown(self):
@@ -206,14 +215,24 @@ class Server:
 
     def start_frame_down(self):
         
-        down = b'\x5A\xF1\x01\x00\x32\xC8\x00\x46'
+        down = b'\x5A\xF1\x01\x00\x36\xB0\x00\x32'
         self.s7.write(down)
         self.s7.read(16)
+        self.s7.write(down)
+        self.s7.read(16)
+        self.s7.write(down)
+        self.s7.read(16)
+        
 
     def start_frame_up(self):
-        up=b'\x5A\xF1\x01\x01\x32\xC8\x00\x47'
+        up=b'\x5A\xF1\x01\x01\x36\xB0\x00\x33'
         self.s7.write(up)
         self.s7.read(16)
+        self.s7.write(up)
+        self.s7.read(16)
+        self.s7.write(up)
+        self.s7.read(16)
+        
 
     
 
@@ -225,20 +244,31 @@ class Server:
         a=self.s7.read(16)
         self.s7.write(sol2)
         a=self.s7.read(16)
+        
+        
+        
+        #self.onlSol()
+        #self.onrSol()
+        
+
+
 
     def lSol(self):
 
-        sol1 =b'\x5A\xF1\x03\x01\x05\x0A\x00\x5E'
+        LSOL =b'\x5A\xF1\x02\x01\x05\x0A\x00\x5D'
         
-        self.s7.write(sol1)
+        self.s7.write(LSOL)
         a=self.s7.read(16)
+        
 
     def rSol(self):
 
-        sol2 = b'\x5A\xF1\x02\x01\x05\x0A\x00\x5D'
+        RSOL =  b'\x5A\xF1\x03\x01\x05\x0A\x00\x5E'
+       
         
-        self.s7.write(sol2)
+        self.s7.write(RSOL)
         a=self.s7.read(16)
+        
         
 
 
@@ -291,11 +321,12 @@ class Server:
         
         self.posSpeed=self.speed%256
         self.posSpeed=int(self.posSpeed)
-        #print(self.posSpeed)
+        print(self.posSpeed)
         
         self.negSpeed=256-self.posSpeed
         
         self.posStop=int(self.speed/256)
+        print(self.posStop)
         self.negStop=int(255-self.posStop)
 
         Summation=500
@@ -326,8 +357,10 @@ class Server:
         self.negChk=bin(int(self.negCom, 2) + int(one, 2))
 
         self.posChk=int(self.posChk,2)
+        print(self.posChk)
         self.negChk=int(self.negChk,2)
         self.values35=bytearray([183,184,1,130,2,self.posSpeed,self.posStop,self.posChk])
+
         self.values46=bytearray([183,184,1,130,2,self.negSpeed,self.negStop,self.negChk])
         self.values=bytearray([183,184,1,130,2,0,0,12])
         
@@ -357,12 +390,13 @@ class Server:
             task.timing.cfg_samp_clk_timing(
                 fre, source="", active_edge=Edge.RISING, sample_mode=AcquisitionType.FINITE, samps_per_chan=N)
 
-            sol1 = b'\x5A\xF1\x02\x01\x05\x0A\x00\x5D'
-            sol2 = b'\x5A\xF1\x03\x01\x05\x0A\x00\x5E'
-            self.s7.write(sol1)
+            LSOL = b'\x5A\xF1\x02\x01\x05\x0A\x00\x5D'
+            #RSOL = b'\x5A\xF1\x03\x01\x05\x0A\x00\x5E'
+            self.s7.write(LSOL)
+            #a=self.s7.read(16)
+            #self.s7.write(RSOL)
             a=self.s7.read(16)
-            self.s7.write(sol2)
-            a=self.s7.read(16)
+            
             print("Hitting done")
             value = task.read(N)
             print("Value read")
@@ -398,13 +432,77 @@ class Server:
                 s1 = len(channel2)
                 print(s1)
                 sample = list(range(s))
-                signalData = {"sample": sample, "channel1": channel1, "channel2":channel2}
-                self.__protocol.send_message('signalData', signalData)
+                signalDataA = {"sample": sample, "channel1": channel1, "channel2":channel2}
+                self.__protocol.send_message('signalDataA', signalDataA)
+            return True
+
+        def istest2():
+            
+            number = 1
+
+            task = nidaqmx.Task()
+            
+
+            task.ai_channels.add_ai_accel_chan("cDAQ1Mod1/ai0")
+            task.ai_channels.add_ai_accel_chan("cDAQ1Mod1/ai1")
+
+            task.timing.cfg_samp_clk_timing(
+                fre, source="", active_edge=Edge.RISING, sample_mode=AcquisitionType.FINITE, samps_per_chan=N)
+
+            
+
+            #LSOL = b'\x5A\xF1\x02\x01\x05\x0A\x00\x5D'
+            RSOL = b'\x5A\xF1\x03\x01\x05\x0A\x00\x5E'
+            self.s7.write(RSOL)
+            a=self.s7.read(16)
+            
+            #a=self.s7.read(16)
+            
+            print("Hitting done")
+            value = task.read(N)
+            print("Value read")
+            v_ch0 = value[0]
+            
+            v_ch1 = value[1]
+
+            number = sum(i > Triggering for i in v_ch1)
+            print(number)
+            if number == 0:
+                print("No value found")
+
+                return False
+            else:
+                task.close()
+
+                print("Value found")
+                position = next(x for x, val in enumerate(v_ch1)
+                                if val > Triggering)
+                print("position", position)
+
+                first_index = int(position - pre_trig)
+                last_index = int(first_index + Num_samples)
+
+                print("f", first_index)
+                print("l", last_index)
+
+                channel1 = v_ch0[first_index:last_index]
+                channel2 = v_ch1[first_index:last_index]
+
+                # print("y",y)
+                s = (len(channel1))
+                s1 = len(channel2)
+                print(s1)
+                sample = list(range(s))
+                signalDataB = {"sample": sample, "channel1": channel1, "channel2":channel2}
+                self.__protocol.send_message('signalDataB', signalDataB)
             return True
         while True:
             t = istest()
             if t == True:
-                break
+                
+                t1=istest2()
+                if t1==True:
+                    break
                 
     def start_front_stream(self):
         if self.__send_front_video:
@@ -466,7 +564,7 @@ class Server:
             recall = recall_m(y_true, y_pred)
             return 2*((precision*recall)/(precision+recall+K.epsilon()))
 
-        model = load_model('T.h5',custom_objects={'dice_loss':dice_loss,'IOU':IOU,'dsc':dsc,'precision_m':precision_m, 'recall_m':recall_m, 'f1_m':f1_m})
+        model = load_model('out.h5',custom_objects={'dice_loss':dice_loss,'IOU':IOU,'dsc':dsc,'precision_m':precision_m, 'recall_m':recall_m, 'f1_m':f1_m})
 
         vid = cv2.VideoCapture(0,cv2.CAP_DSHOW)
         vid.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -475,15 +573,19 @@ class Server:
 
         while (vid.isOpened()):
             _, frame = vid.read()
+            print(frame.shape)
+            frame=cv2.resize(frame, (512,512))
             
-            small_img = cv2.resize(frame, (512, 512))
+            
+            small_img = cv2.resize(frame,(512,512))
             small_img = np.array(small_img)
 
             small_img = small_img[None, :, :, :]
 
             self.prediction = model.predict(small_img)[0] * 255
-            bw=cv2.resize(self.prediction, (224,224))
-            crack_image = cv2.resize(self.prediction, (640, 480))
+            
+            bw=cv2.resize(self.prediction, (512,512))
+            crack_image = cv2.resize(self.prediction,(512,512))
             b, g, r = cv2.split(crack_image)
             z = np.zeros_like(g)
             crack_image = cv2.merge((z, b, z))
@@ -493,9 +595,10 @@ class Server:
             result = cv2.addWeighted(image2, 0.5, crack_image, 0.5, 0)
             # result=result * 255
             result = result.astype(np.uint8)
-            result=cv2.resize(result, (512,512))
             
-            v=bytearray([183,184,1,4,1,197,198])
+            result=cv2.resize(result,(512,512))
+            
+            '''v=bytearray([183,184,1,4,1,197,198])
             self.s5.write(v)
             c=self.s5.read(10)
             array=[]
@@ -529,9 +632,10 @@ class Server:
             fontscale=1
             color=(255,0,0)
             thickness=1
-            result=cv2.putText(result,cm,org,font,fontscale,color,thickness,cv2.LINE_AA)
+            result=cv2.putText(result,cm,org,font,fontscale,color,thickness,cv2.LINE_AA)'''
 
             self.__protocol.send_message('frame', result)
+            self.__protocol.send_message('or_frame', frame)
 
             self.__protocol.send_message('bw_frame', bw)
             
@@ -541,13 +645,13 @@ class Server:
 
     def SemiAuto(self):
         
-        L_X=int((self.G_X/0.5)+1)
-        L_Y=int(self.G_Y/0.5)
+        L_X=int((self.G_X/0.25)+1)
+        L_Y=int(self.G_Y/0.25)
 
         for i in range(1,L_X+1):
         
             for j in range(1,L_Y+1):
-                r,p=Video().detect()
+                o,r,p=Video().detect()
                 ta=262144
                 rgb=p
                 gray=cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
@@ -579,9 +683,9 @@ class Server:
                 rec_x=i
                 x=str(rec_x)
                 if (i%2)==0:
-                    rec_y=(L_Y-j)*0.5
+                    rec_y=(L_Y-j)*0.25
                 elif (i%2)!=0:
-                    rec_y=j*0.5
+                    rec_y=j*0.25
                 y=str(rec_y)
                 b='M'
                 M="Y="+y+b
@@ -597,13 +701,21 @@ class Server:
                 
                 r=cv2.putText(r,P,org,font,fontscale,color,thickness,cv2.LINE_AA)
                 self.__protocol.send_message('frame', r)
+                self.__protocol.send_message('or_frame', o)
                 self.__protocol.send_message('bw_frame', p)
-                if (Density>=0.8):
-                    sample,channel1,channel2=eSignal(self.s7).signal()
-                    AsignalData = {"sample": sample, "channel1": channel1, "channel2":channel2,"rec_x":rec_x,"rec_y":rec_y}
-                    self.__protocol.send_message('AsignalData', AsignalData)
-                    up = b'\x5A\xF1\x01\x01\x32\xC8\x00\x47'
+                if (Density>=0.1):
+                    sample,channel1,channel2,channel11,channel22=eSignal(self.s7).signal()
+                    AsignalDataA = {"sample": sample, "channel1": channel1, "channel2":channel2,"rec_x":rec_x,"rec_y":rec_y}
+                    self.__protocol.send_message('AsignalDataA', AsignalDataA)
+                    AsignalDataB = {"sample": sample, "channel11": channel11, "channel22":channel22,"rec_x":rec_x,"rec_y":rec_y}
+                    self.__protocol.send_message('AsignalDataB', AsignalDataB)
+                    up =b'\x5A\xF1\x01\x01\x36\xB0\x00\x33'
                     self.s7.write(up)
+                    self.s7.read(16)
+                    self.s7.write(up)
+                    self.s7.read(16)
+                    self.s7.write(up)
+                    
                     X=[]
                     while True:
                         c=self.s7.read(16)
@@ -616,29 +728,33 @@ class Server:
                             print("done")
                             break
 
-                    MotorDriver(self.s3,self.s4,self.s5,self.s6).moveForward(steps=588)
+                    MotorDriver(self.s3,self.s4,self.s5,self.s6).moveForward(steps=294)
+                
+        
                 else:
-                    MotorDriver(self.s3,self.s4,self.s5,self.s6).moveForward(steps=588)
+                    MotorDriver(self.s3,self.s4,self.s5,self.s6).moveForward(steps=294)
             if (i<L_X):    
                 if (i%2)!=0:
                     MotorDriver(self.s3,self.s4,self.s5,self.s6).turnRight()
-                    MotorDriver(self.s3,self.s4,self.s5,self.s6).moveForward(steps=588)
-                    MotorDriver(self.s3,self.s4,self.s5,self.s6).turnRight()
+                    MotorDriver(self.s3,self.s4,self.s5,self.s6).moveForward(steps=294)
+                    MotorDriver(self.s3,self.s4,self.s5,self.s6).turnRight1()
                 elif (i%2)==0:
                     MotorDriver(self.s3,self.s4,self.s5,self.s6).turnLeft()
-                    MotorDriver(self.s3,self.s4,self.s5,self.s6).moveForward(steps=588)
-                    MotorDriver(self.s3,self.s4,self.s5,self.s6).turnLeft()
+                    MotorDriver(self.s3,self.s4,self.s5,self.s6).moveForward(steps=294)
+                    MotorDriver(self.s3,self.s4,self.s5,self.s6).turnLeft1()
             else:
                 print("For loop Finished")
 
         print(self.G_X)
         if (self.G_X%1)!=0:
+            print("Hello")
             MotorDriver(self.s3,self.s4,self.s5,self.s6).turnRight()
             OM=1176
             SF=OM*self.G_X
             MotorDriver(self.s3,self.s4,self.s5,self.s6).moveForward(steps=SF)
             MotorDriver(self.s3,self.s4,self.s5,self.s6).turnRight()
         elif (self.G_X%1)==0:
+            print("Hi")
             MotorDriver(self.s3,self.s4,self.s5,self.s6).turnLeft()
             OM=1176
             SF=OM*self.G_X
@@ -685,6 +801,7 @@ class Server:
         self.s5.write(self.values35)
         self.s4.write(self.values35)
         self.s6.write(self.values35)
+        
 
     def right(self):
         #self.switch=bytearray([183,184,1,5,1,1,137])
