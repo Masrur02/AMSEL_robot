@@ -116,14 +116,16 @@ class Socket:
 
 
 class Protocol:
-    def __init__(self, on_message_handlers, front_port=59010,bw_port=59085,video_port=59083, data_port=59084):
-        assert int(video_port) != int(data_port) != int(front_port), 'Video and data port can not be the same.'
+    def __init__(self, on_message_handlers, front_port=59010,bw_port=59085, or_port=59086,video_port=59083, data_port=59084):
+        assert int(video_port) != int(data_port) != int(or_port)!= int(front_port), 'Video and data port can not be the same.'
         self.__video_port = video_port
+        self.__or_port = or_port
         self.__data_port = data_port
         self.__front_port = front_port
         self.__bw_port = bw_port
         self.__on_message_handlers = on_message_handlers
         self.__video_socket = None
+        self.__or_socket = None
         self.__data_socket = None
         self.__front_socket = None
         self.__bw_socket = None
@@ -149,6 +151,9 @@ class Protocol:
             if self.__bw_socket:
                 self.__bw_socket.diconnect()
                 print('Disconneted bwSocket.')
+            if self.__or_socket:
+                self.__or_socket.diconnect()
+                print('Disconneted orSocket.')
         except:
             print('Disconnect Error.')
         
@@ -156,6 +161,7 @@ class Protocol:
         self.__data_socket = Socket(port=self.__data_port)
         self.__front_socket = Socket(port=self.__front_port)
         self.__bw_socket = Socket(port=self.__bw_port)
+        self.__or_socket = Socket(port=self.__or_port)
         
         print('Waiting for connection...')
 
@@ -163,6 +169,7 @@ class Protocol:
         Thread(target=self.__data_socket.wait_for_connection).start()
         Thread(target=self.__front_socket.wait_for_connection).start()
         Thread(target=self.__bw_socket.wait_for_connection).start()
+        Thread(target=self.__or_socket.wait_for_connection).start()
         Thread(target=self.__check_ready).start()
 
         check_connection_thread = Thread(target=self.__check_connected)
@@ -198,6 +205,12 @@ class Protocol:
             except ConnectionResetError:
                 if self.__is_ready:
                     self.reinit()
+        if message_type == 'or_frame':
+            try:
+                self.__or_socket.send_message(message_type, message_content)
+            except ConnectionResetError:
+                if self.__is_ready:
+                    self.reinit()
         else:
             try:
                 self.__data_socket.send_message(message_type, message_content)
@@ -211,6 +224,8 @@ class Protocol:
         self.__bw_socket.send_message('bw_frame',bw_frame)
     def send_front_frame(self, front_frame):
         self.__front_socket.send_message('front_frame', front_frame)
+    def send_or_frame(self, or_frame):
+        self.__front_socket.send_message('or_frame', or_frame)
 
     def __recv_execute_data(self):
         try:
@@ -226,7 +241,7 @@ class Protocol:
 
     def __check_ready(self):
         while True:
-            if self.__video_socket.isConnected and self.__data_socket.isConnected and self.__bw_socket.isConnected and self.__front_socket.isConnected:
+            if self.__video_socket.isConnected and self.__or_socket.isConnected and self.__data_socket.isConnected and self.__bw_socket.isConnected and self.__front_socket.isConnected:
                 self.__pool_connection = True
                 self.__is_ready = True
                 break
