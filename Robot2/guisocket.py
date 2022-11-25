@@ -15,9 +15,12 @@ class Socket:
         self.on_message = {
             'frame': self.onFrameAsync,
             'bw_frame':self.onbwFrameAsync,
+            'or_frame':self.onorFrameAsync,
             'front_frame':self.onFrontFrameAsync,
-            'signalData':self.onsignalData,
-            "AsignalData":self.AonsignalData,
+            'signalDataA':self.onsignalDataA,
+            'signalDataB':self.onsignalDataB,
+            "AsignalDataA":self.AonsignalDataA,
+            "AsignalDataB":self.AonsignalDataB,
             "feedData":self.onfeedData,
             'u_there': lambda x: None
 
@@ -45,27 +48,33 @@ class Socket:
 
     def onbwFrameAsync(self, bw_frame):
         Thread(target=self.onbwFrame, args=(bw_frame,)).start()
+    def onorFrameAsync(self, or_frame):
+        Thread(target=self.onorFrame, args=(or_frame,)).start()
 
 
     
     def onFrontFrameAsync(self, front_frame):
         Thread(target=self.onFrontFrame, args=(front_frame,)).start()
     
-    def onsignalData(self, signalData):
-        Thread(target=self.onSignal, args=(signalData,)).start()
+    def onsignalDataA(self, signalDataA):
+        Thread(target=self.onSignalA, args=(signalDataA,)).start()
+    def onsignalDataB(self, signalDataB):
+        Thread(target=self.onSignalB, args=(signalDataB,)).start()
 
-    def AonsignalData(self, AsignalData):
-        Thread(target=self.AonSignal, args=(AsignalData,)).start()
+    def AonsignalDataA(self, AsignalDataA):
+        Thread(target=self.AonSignalA, args=(AsignalDataA,)).start()
+    def AonsignalDataB(self, AsignalDataB):
+        Thread(target=self.AonSignalB, args=(AsignalDataB,)).start()
     def onfeedData(self, feedData):
         Thread(target=self.onfeed, args=(feedData,)).start()
     
 
-    def onSignal(self,signalData):
+    def onSignalA(self,signalDataA):
         self.gui.plot.clear()
         self.gui.plt.clear()
-        self.x = signalData.get("sample")
-        self.y = signalData.get("channel1")
-        self.y1 = signalData.get("channel2")
+        self.x = signalDataA.get("sample")
+        self.y = signalDataA.get("channel1")
+        self.y1 = signalDataA.get("channel2")
         
         #print(self.y)
         #print(self.y1)
@@ -76,15 +85,92 @@ class Socket:
         self.gui.plot.clear()
         self.gui.plt.clear()
         self.gui.Start_button.config(state=NORMAL)
+        import pandas as pd
+        from datetime import datetime
+        import time
+        today = datetime.now()
 
-    def AonSignal(self,AsignalData):
+        directory = today.strftime('%Y%m%d')
+       
+        path = "Record"
+        folder=os.path.join(path, directory)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        path2="Channel0"
+        folder2=os.path.join(folder, path2)
+
+        if not os.path.exists(folder2):
+            os.makedirs(folder2)
+        list_dict1 = {'X': self.x, 'y': self.y}
+        list_dict2 = {'X': self.x, 'y': self.y1}
+        
+        df1 = pd.DataFrame(list_dict1)
+        df2 = pd.DataFrame(list_dict2)
+        time=time.time()
+        file1="Channel1__"+ str(time)
+        file2="Channel2__"+ str(time)
+        filename1 = "%s.csv" % file1
+        filename2 = "%s.csv" % file2
+        
+
+        df1.to_csv(folder2 + "/" + filename1, index=False)
+        df2.to_csv(folder2+ "/" + filename2, index=False)
+        
+    def onSignalB(self,signalDataB):
         self.gui.plot.clear()
         self.gui.plt.clear()
-        self.sample = AsignalData.get("sample")
-        self.channel1 = AsignalData.get("channel1")
-        self.channel2 = AsignalData.get("channel2")
-        self.rec_x=AsignalData.get("rec_x")
-        self.rec_y=AsignalData.get("rec_y")
+        self.x = signalDataB.get("sample")
+        self.y = signalDataB.get("channel1")
+        self.y1 = signalDataB.get("channel2")
+        
+        #print(self.y)
+        #print(self.y1)
+        
+        self.gui.plot.plot(self.x, self.y,color='red')
+        self.gui.plt.plot(self.x, self.y1,color='blue')
+        self.gui.canvas.draw()
+        self.gui.plot.clear()
+        self.gui.plt.clear()
+        self.gui.Start_button.config(state=NORMAL)
+        import pandas as pd
+        from datetime import datetime
+        import time
+        today = datetime.now()
+
+        directory = today.strftime('%Y%m%d')
+       
+        path = "Record"
+        folder=os.path.join(path, directory)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        path2="Channel1"
+        folder2=os.path.join(folder, path2)
+
+        if not os.path.exists(folder2):
+            os.makedirs(folder2)
+        list_dict1 = {'X': self.x, 'y': self.y}
+        list_dict2 = {'X': self.x, 'y': self.y1}
+        
+        df1 = pd.DataFrame(list_dict1)
+        df2 = pd.DataFrame(list_dict2)
+        time=time.time()
+        file1="Channel1__"+ str(time)
+        file2="Channel2__"+ str(time)
+        filename1 = "%s.csv" % file1
+        filename2 = "%s.csv" % file2
+        
+
+        df1.to_csv(folder2 + "/" + filename1, index=False)
+        df2.to_csv(folder2+ "/" + filename2, index=False)
+        
+    def AonSignalA(self,AsignalDataA):
+        self.gui.plot.clear()
+        self.gui.plt.clear()
+        self.sample = AsignalDataA.get("sample")
+        self.channel1 = AsignalDataA.get("channel1")
+        self.channel2 = AsignalDataA.get("channel2")
+        self.rec_x=AsignalDataA.get("rec_x")
+        self.rec_y=AsignalDataA.get("rec_y")
         #print(self.y)
         #print(self.y1)
         
@@ -105,6 +191,11 @@ class Socket:
         folder=os.path.join(path, directory)
         if not os.path.exists(folder):
             os.makedirs(folder)
+        path2="Channel0"
+        folder2=os.path.join(folder, path2)
+
+        if not os.path.exists(folder2):
+            os.makedirs(folder2)
         list_dict1 = {'sample': self.sample, 'channel1': self.channel1}
         list_dict2 = {'sample': self.sample, 'y': self.channel2}
         
@@ -117,8 +208,57 @@ class Socket:
         filename2 = "%s.csv" % file2
         
 
-        df1.to_csv(folder + "/" + filename1, index=False)
-        df2.to_csv(folder+ "/" + filename2, index=False)
+        df1.to_csv(folder2 + "/" + filename1, index=False)
+        df2.to_csv(folder2+ "/" + filename2, index=False)
+
+
+    def AonSignalB(self,AsignalDataB):
+        self.gui.plot.clear()
+        self.gui.plt.clear()
+        self.sample = AsignalDataB.get("sample")
+        self.channel11 = AsignalDataB.get("channel11")
+        self.channel22 = AsignalDataB.get("channel22")
+        self.rec_x=AsignalDataB.get("rec_x")
+        self.rec_y=AsignalDataB.get("rec_y")
+        #print(self.y)
+        #print(self.y1)
+        
+        self.gui.plot.plot(self.sample, self.channel11,color='red')
+        self.gui.plt.plot(self.sample, self.channel22,color='blue')
+        self.gui.canvas.draw()
+        self.gui.plot.clear()
+        self.gui.plt.clear()
+        self.gui.Start_button.config(state=NORMAL)
+        import pandas as pd
+        from datetime import datetime
+        import time
+        today = datetime.now()
+
+        directory = today.strftime('%Y%m%d')
+       
+        path = "AutoRecord"
+        folder=os.path.join(path, directory)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        path2="Channel1"
+        folder2=os.path.join(folder, path2)
+
+        if not os.path.exists(folder2):
+            os.makedirs(folder2)
+        list_dict1 = {'sample': self.sample, 'channel1': self.channel1}
+        list_dict2 = {'sample': self.sample, 'y': self.channel2}
+        
+        df1 = pd.DataFrame(list_dict1)
+        df2 = pd.DataFrame(list_dict2)
+        time=time.time()
+        file1="Channel1__"+ str(time)+"_"+str(self.rec_x)+","+str(self.rec_y)
+        file2="Channel2__"+ str(time)+"_"+str(self.rec_x)+","+str(self.rec_y)
+        filename1 = "%s.csv" % file1
+        filename2 = "%s.csv" % file2
+        
+
+        df1.to_csv(folder2 + "/" + filename1, index=False)
+        df2.to_csv(folder2+ "/" + filename2, index=False)
     def onfeed(self,feedData):
         print(feedData)
         '''self.gui.Start_button.config(state=NORMAL)
@@ -152,6 +292,11 @@ class Socket:
         folder=os.path.join(path, directory)
         if not os.path.exists(folder):
             os.makedirs(folder)
+        path2="Channel0"
+        folder2=os.path.join(path2, folder)
+
+        if not os.path.exists(folder2):
+            os.makedirs(folder2)
         list_dict1 = {'X': self.x, 'y': self.y}
         list_dict2 = {'X': self.x, 'y': self.y1}
         
@@ -164,8 +309,8 @@ class Socket:
         filename2 = "%s.csv" % file2
         
 
-        df1.to_csv(folder + "/" + filename1, index=False)
-        df2.to_csv(folder+ "/" + filename2, index=False)
+        df1.to_csv(folder2 + "/" + filename1, index=False)
+        df2.to_csv(folder2+ "/" + filename2, index=False)
         
         
 
@@ -206,7 +351,7 @@ class Socket:
         
         frame = cv2.flip(frame, -1)
         frame = cv2.flip(frame, -1)
-        frame2 = cv2.resize(frame, (512,512))
+        frame2 = cv2.resize(frame, (640,480))
         cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
         img = PIL.Image.fromarray(cv2image)
         img = img.resize((300, 250))
@@ -247,7 +392,7 @@ class Socket:
 
         bw_frame = cv2.flip(bw_frame, 1)
         bw_frame = cv2.flip(bw_frame, 1)
-        bw_frame2 = cv2.resize(bw_frame, (512,512))
+        bw_frame2 = cv2.resize(bw_frame, (640,480))
         cv2image = cv2.cvtColor(bw_frame, cv2.COLOR_BGR2RGBA)
         #img = PIL.Image.fromarray(cv2image)
         img = cv2image.resize((300, 250))
@@ -277,6 +422,45 @@ class Socket:
         cv2.imwrite(folder1 + '/' + str(file) + '.jpg', bw_frame2)
 
         self.gui.top.update()
+
+
+    def onorFrame(self, or_frame):
+        # global flag
+        # flag = True
+
+        or_frame = cv2.flip(or_frame, 1)
+        or_frame = cv2.flip(or_frame, 1)
+        or_frame2 = cv2.resize(or_frame, (640,480))
+        cv2image = cv2.cvtColor(or_frame, cv2.COLOR_BGR2RGBA)
+        #img = PIL.Image.fromarray(cv2image)
+        img = cv2image.resize((300, 250))
+
+        #imgtk = ImageTk.PhotoImage(image=img)
+        # label = Label(self.gui.Video2, image=imgtk)
+        # label.place(x=10,y=50)
+        #self.gui.lmain.imgtk = imgtk
+
+        #self.gui.lmain.configure(image=imgtk)
+        #self.gui.lmain.place(x=5, y=15)
+        import pandas as pd
+        from datetime import datetime
+        import time
+        path1 = "Original"
+
+        today = datetime.now()
+
+        directory1 = today.strftime('%Y%m%d')
+
+        folder1 = os.path.join(path1, directory1)
+        if not os.path.exists(folder1):
+            os.makedirs(folder1)
+        time = time.time()
+        file = str(time)
+
+        cv2.imwrite(folder1 + '/' + str(file) + '.jpg', or_frame2)
+
+        self.gui.top.update()
+    
     def video(self):
         self.gui.Original_button.config(state=DISABLED)
         self.__protocol.send_message('command', 'start_video')
@@ -316,7 +500,7 @@ class Socket:
         self.gui.plot.clear()
         self.__protocol.send_message("command", "startSignal")
 
-        self.gui.Start_button.config(state=DISABLED)
+        #self.gui.Start_button.config(state=DISABLED)
     
     def semiAuto(self):
         '''self.gui.Start_button.config(state=DISABLED)
