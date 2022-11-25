@@ -22,7 +22,7 @@ class Gui:
     def __init__(self, net_connection):
         top = Tk()
         self.top = top
-        self.top.title("ASMEL Robot Remote")
+        self.top.title("AMSEL Robot Remote")
         self.top.geometry("1500x520")
         self.top.resizable(width=0,height=0)
         
@@ -92,7 +92,7 @@ class Gui:
         self.time_label = Label(self.Sensor, text="time(ms)",fg='blue',font="Times 10").place(x=5, y=28)
         self.time_entry = Entry(self.Sensor)
         self.time_entry.place(x=58, y=30, width=90)
-        self.trig_label = Label(self.Sensor, text="Trig(mv)",fg='blue',font="Times 10").place(x=5, y=50)
+        self.trig_label = Label(self.Sensor, text="Trig(v)",fg='blue',font="Times 10").place(x=5, y=50)
         self.trig_entry = Entry(self.Sensor)
         self.trig_entry.place(x=58, y=50, width=90)
         self.Send_button = Button(self.Sensor, text="Send", fg="blue", command=self.net_connection.trigger)
