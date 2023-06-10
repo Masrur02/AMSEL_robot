@@ -15,6 +15,7 @@ This is the source code of Development of AI and Robotics Assisted Automated Pav
 8. [Detection.py](https://github.com/Masrur02/AMSEL_robot/blob/version_14.12.2021/Detection.py)- Using the trained model and an input video, this predicts the cracks, and returns the original video with predicted cracks onto it. This code is implemented inside the robot by using the weighted file for detecting the cracks using the images captured by the camera installed in the robot. However, this file can be also used outside the robotic vehicle for detecting cracks from any input video.
 9. [Measurement_new.py](https://github.com/Masrur02/AMSEL_robot/blob/version_14.12.2021/Measurement_new.py)-Assuming you have predicted black and white images, this code can be used for measuring the crack's length, width, area.
 10. [stiching.py](https://github.com/Masrur02/AMSEL_robot/blob/version_14.12.2021/Stitching.py)-Assuming you have the predicted images from a grid, you can stiched the images based on grid position by this code.
+11. [Ni_sensors.py](https://github.com/Masrur02/AMSEL_robot/blob/version_14.12.2021/NI_sensor.py)-This is the python code for the NI-DAQ device.
 
 # App for Controlling the Robot
 ![gui](https://github.com/Masrur02/AMSEL_robot/assets/33350185/70617a74-a590-46ba-8d60-47b1a5306399)
