@@ -19,6 +19,9 @@ This is the source code of Development of AI and Robotics Assisted Automated Pav
 
 # App for Controlling the Robot
 ![gui](https://github.com/Masrur02/AMSEL_robot/assets/33350185/70617a74-a590-46ba-8d60-47b1a5306399)
+# Developed Robot
+![a](https://github.com/Masrur02/AMSEL_robot/assets/33350185/62a16a8d-030c-48c9-8663-dc443e0ffd0d)
+
 
 # RCDNet Architecture
 ![Screenshot_2023-06-11_01-12-15](https://github.com/Masrur02/AMSEL_robot/assets/33350185/2a838675-e453-44cf-b912-95281c01e742)
