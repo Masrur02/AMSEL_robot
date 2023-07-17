@@ -36,11 +36,11 @@ Khan, M.A.-M.; Harseno, R.W.; Kee, S.-H.; Nahid, A.-A. Development of AI- and Ro
 ![image](https://github.com/Masrur02/AMSEL_robot/assets/33350185/e750d66b-343e-4487-bf59-b55319c635a0)
 
 # Citation
-Please cite our paper if you use this code or the mixed dataset in your own work:.\
+Please cite our paper if you use this code or the mixed dataset in your own work:\
 @article{remotesensing-2465244},\
   title={Development of AI- and Robotics-Assisted Automated Pavement-Crack-Evaluation System},\
-  author={Khan, M.A.-M.; Harseno, R.W.; Kee, S.-H.; Nahid, A.-A.},.\
-  journal={Remote Sensing},.\
+  author={Khan, M.A.-M.; Harseno, R.W.; Kee, S.-H.; Nahid, A.-A.},\
+  journal={Remote Sensing},\
   volume={15},.\
   year={2023}
 }
