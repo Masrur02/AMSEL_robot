@@ -41,7 +41,7 @@ Please cite our paper if you use this code or the mixed dataset in your own work
   title={Development of AI- and Robotics-Assisted Automated Pavement-Crack-Evaluation System},\
   author={Khan, M.A.-M.; Harseno, R.W.; Kee, S.-H.; Nahid, A.-A.},\
   journal={Remote Sensing},\
-  volume={15},.\
+  volume={15},\
   year={2023}
 }
 
