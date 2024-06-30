@@ -131,7 +131,7 @@ class Server:
     def onrSol(self):
         thread = Thread(target=self.rSol)
         thread.start()
-        print("Tuli")
+        
 
 
     def onFrameDown(self):
