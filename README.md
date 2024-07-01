@@ -20,7 +20,8 @@ Khan, M.A.-M.; Harseno, R.W.; Kee, S.-H.; Nahid, A.-A. Development of AI- and Ro
 11. [Ni_sensors.py](https://github.com/Masrur02/AMSEL_robot/blob/version_14.12.2021/NI_sensor.py)-This is the Python code for the NI-DAQ device.
 
 # App for Controlling the Robot
-![gui](https://github.com/Masrur02/AMSEL_robot/assets/33350185/70617a74-a590-46ba-8d60-47b1a5306399)
+![image](https://github.com/Masrur02/AMSEL_robot/assets/33350185/ffc59aa2-478b-47ac-bed3-c72d792c7669)
+
 # Developed Robot
 ![a](https://github.com/Masrur02/AMSEL_robot/assets/33350185/62a16a8d-030c-48c9-8663-dc443e0ffd0d)
 
