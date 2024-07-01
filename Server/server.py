@@ -126,7 +126,7 @@ class Server:
     def onlSol(self):
         thread = Thread(target=self.lSol)
         thread.start()
-        print("Khan")
+        
 
     def onrSol(self):
         thread = Thread(target=self.rSol)
